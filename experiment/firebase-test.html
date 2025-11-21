@@ -149,12 +149,11 @@ recordBtn.onclick = async () => {
 
 /* ===============================
    HANDLE RECORDING STOP
-   (UPDATED TO UPLOAD ROBOTIC WAV)
 ================================ */
 async function handleRecordingStop() {
   const ts = Date.now();
 
-  // Upload user recording
+  // Upload user audio
   const userBlob = new Blob(chunks, { type: "audio/webm" });
   const userRef = storage.ref(`users/${userId}/user_${ts}.webm`);
   await userRef.put(userBlob);
@@ -166,8 +165,8 @@ async function handleRecordingStop() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ audio: userAudioURL, userId })
   });
-
   const data = await response.json();
+
   if (data.error) {
     statusEl.textContent = "⚠️ Error: " + data.error;
     return;
@@ -176,32 +175,24 @@ async function handleRecordingStop() {
   let finalAudioURL = data.audio;
   let roboticAudioURL = null;
 
-  // ===== ROBOTIC CONDITION =====
+  // ROBOTIC condition
   if (condition === "robotic") {
-    // 1. Apply DSP → WAV (local)
     const roboticLocalURL = await applyRoboticEffect(data.audio);
-
-    // 2. Convert local URL → Blob
     const roboticBlob = await fetch(roboticLocalURL).then(r => r.blob());
 
-    // 3. Upload robotic WAV
     const roboticFileName = `users/${userId}/robotic_${ts}.wav`;
     const roboticRef = storage.ref(roboticFileName);
     await roboticRef.put(roboticBlob, { contentType: "audio/wav" });
 
-    // 4. Firebase URL
     roboticAudioURL = await roboticRef.getDownloadURL();
-
-    // 5. Play robotic version
     finalAudioURL = roboticAudioURL;
   }
 
-  // Play audio
   responseAudio.src = finalAudioURL;
   surveyBtn.style.display = "inline-block";
   statusEl.innerHTML = "";
 
-  // Save conversation record
+  // Save conversation
   await db.collection("users").doc(userId).collection("conversation").add({
     condition,
     userAudioURL,
@@ -219,18 +210,16 @@ async function handleRecordingStop() {
 }
 
 /* ===============================
-   ROBOTIC DSP (Offline → WAV)
+   ROBOTIC DSP (AM + Noise + Filters)
 ================================ */
 async function applyRoboticEffect(url) {
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();
 
-  // Decode
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const decoded = await ctx.decodeAudioData(arrayBuffer);
-  ctx.close();
+  const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const decoded = await tempCtx.decodeAudioData(arrayBuffer);
+  tempCtx.close();
 
-  // Offline for speed
   const offline = new OfflineAudioContext(
     decoded.numberOfChannels,
     decoded.length,
@@ -240,59 +229,57 @@ async function applyRoboticEffect(url) {
   const src = offline.createBufferSource();
   src.buffer = decoded;
 
-  /* ==============================================
-       1. CLEAN, ROBOTIC F0 FLATTENING (AM SINE)
-     ============================================== */
+  // ---- A. Robotic AM (fake monotone pitch) ----
   const osc = offline.createOscillator();
-  osc.type = "sine";          // smoother, not buzzy
-  osc.frequency.value = 110;  // fixed "robotic" pitch
+  osc.type = "sine";
+  osc.frequency.value = 120;
 
   const modGain = offline.createGain();
-  modGain.gain.value = 0.15;  // amount of robotic character
+  modGain.gain.value = 0.18;
 
-  // AM: oscillator controls gain of the voice
   osc.connect(modGain.gain);
   src.connect(modGain);
 
-  /* ==============================================
-       2. ADD SYNTHETIC DIGITAL NOISE (OPTIONAL)
-     ============================================== */
+  // ---- B. Telephone-like EQ ----
+  const hp = offline.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 250;
+
+  const lp = offline.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 3500;
+
+  modGain.connect(hp);
+  hp.connect(lp);
+
+  // ---- C. Subtle digital noise ----
   const noiseBuffer = offline.createBuffer(1, decoded.length, decoded.sampleRate);
   const noiseData = noiseBuffer.getChannelData(0);
-
   for (let i = 0; i < noiseData.length; i++) {
-    // “digital” noise — small but not white noise
-    noiseData[i] = (Math.random() - 0.5) * 0.02;
+    noiseData[i] = (Math.random() * 2 - 1) * 0.006;
   }
 
   const noise = offline.createBufferSource();
   noise.buffer = noiseBuffer;
 
   const noiseGain = offline.createGain();
-  noiseGain.gain.value = 0.01; // very subtle
+  noiseGain.gain.value = 0.02;
 
   noise.connect(noiseGain);
 
-  /* ==============================================
-       3. FINAL MIX
-     ============================================== */
+  // ---- Mix ----
   const mix = offline.createGain();
-  modGain.connect(mix);
+  lp.connect(mix);
   noiseGain.connect(mix);
   mix.connect(offline.destination);
 
-  // Start
   osc.start(0);
   src.start(0);
   noise.start(0);
 
-  // Render
   const rendered = await offline.startRendering();
-
   return audioBufferToWavURL(rendered);
 }
-
-
 
 /* ===============================
    WAV EXPORT HELPER
@@ -300,8 +287,8 @@ async function applyRoboticEffect(url) {
 function audioBufferToWavURL(buffer) {
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
-  const length = buffer.length * numChannels * 2 + 44;
 
+  const length = buffer.length * numChannels * 2 + 44;
   const arrayBuffer = new ArrayBuffer(length);
   const view = new DataView(arrayBuffer);
 
