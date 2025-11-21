@@ -23,6 +23,7 @@
     .dots span { display: inline-block; width: 0.5rem; height: 0.5rem; margin: 0 0.1rem; background-color: #555; border-radius: 50%; animation: blink 1.4s infinite both; }
     .dots span:nth-child(2) { animation-delay: 0.2s; }
     .dots span:nth-child(3) { animation-delay: 0.4s; }
+
     @keyframes blink { 0%,80%,100%{opacity:0;} 40%{opacity:1;} }
   </style>
 </head>
@@ -148,11 +149,12 @@ recordBtn.onclick = async () => {
 
 /* ===============================
    HANDLE RECORDING STOP
+   (UPDATED TO UPLOAD ROBOTIC WAV)
 ================================ */
 async function handleRecordingStop() {
   const ts = Date.now();
 
-  // Upload user audio
+  // Upload user recording
   const userBlob = new Blob(chunks, { type: "audio/webm" });
   const userRef = storage.ref(`users/${userId}/user_${ts}.webm`);
   await userRef.put(userBlob);
@@ -174,16 +176,32 @@ async function handleRecordingStop() {
   let finalAudioURL = data.audio;
   let roboticAudioURL = null;
 
+  // ===== ROBOTIC CONDITION =====
   if (condition === "robotic") {
-    roboticAudioURL = await applyRoboticEffect(data.audio);
+    // 1. Apply DSP → WAV (local)
+    const roboticLocalURL = await applyRoboticEffect(data.audio);
+
+    // 2. Convert local URL → Blob
+    const roboticBlob = await fetch(roboticLocalURL).then(r => r.blob());
+
+    // 3. Upload robotic WAV
+    const roboticFileName = `users/${userId}/robotic_${ts}.wav`;
+    const roboticRef = storage.ref(roboticFileName);
+    await roboticRef.put(roboticBlob, { contentType: "audio/wav" });
+
+    // 4. Firebase URL
+    roboticAudioURL = await roboticRef.getDownloadURL();
+
+    // 5. Play robotic version
     finalAudioURL = roboticAudioURL;
   }
 
+  // Play audio
   responseAudio.src = finalAudioURL;
   surveyBtn.style.display = "inline-block";
   statusEl.innerHTML = "";
 
-  // Save conversation turn (no duplicates)
+  // Save conversation record
   await db.collection("users").doc(userId).collection("conversation").add({
     condition,
     userAudioURL,
@@ -201,18 +219,16 @@ async function handleRecordingStop() {
 }
 
 /* ===============================
-   ROBOTIC DSP (Offline, Instant WAV)
+   ROBOTIC DSP (Offline → WAV)
 ================================ */
 async function applyRoboticEffect(url) {
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();
 
-  // Decode
   const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
   const decoded = await tempCtx.decodeAudioData(arrayBuffer);
   tempCtx.close();
 
-  // Offline processing
   const offlineCtx = new OfflineAudioContext(
     decoded.numberOfChannels,
     decoded.length,
@@ -222,7 +238,7 @@ async function applyRoboticEffect(url) {
   const src = offlineCtx.createBufferSource();
   src.buffer = decoded;
 
-  // Soft AM modulation (gentle robotic effect)
+  // Gentle AM modulation
   const mod = offlineCtx.createOscillator();
   mod.type = "square";
   mod.frequency.value = 90;
@@ -233,14 +249,14 @@ async function applyRoboticEffect(url) {
   mod.connect(modGain.gain);
   src.connect(modGain);
 
-  // Soft highpass
+  // Highpass
   const hp = offlineCtx.createBiquadFilter();
   hp.type = "highpass";
   hp.frequency.value = 250;
 
   modGain.connect(hp);
 
-  // Gentle bitcrusher (retro TTS-ish)
+  // Bitcrusher
   const crusher = offlineCtx.createWaveShaper();
   const bits = 10;
   const steps = 2 ** bits;
@@ -258,18 +274,17 @@ async function applyRoboticEffect(url) {
   src.start(0);
 
   const rendered = await offlineCtx.startRendering();
-
-  // Export as WAV (instant)
   return audioBufferToWavURL(rendered);
 }
 
 /* ===============================
-   WAV Export Helper (Instant)
+   WAV EXPORT HELPER
 ================================ */
 function audioBufferToWavURL(buffer) {
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
   const length = buffer.length * numChannels * 2 + 44;
+
   const arrayBuffer = new ArrayBuffer(length);
   const view = new DataView(arrayBuffer);
 
