@@ -225,57 +225,74 @@ async function applyRoboticEffect(url) {
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();
 
-  const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const decoded = await tempCtx.decodeAudioData(arrayBuffer);
-  tempCtx.close();
+  // Decode
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const decoded = await ctx.decodeAudioData(arrayBuffer);
+  ctx.close();
 
-  const offlineCtx = new OfflineAudioContext(
+  // Offline for speed
+  const offline = new OfflineAudioContext(
     decoded.numberOfChannels,
     decoded.length,
     decoded.sampleRate
   );
 
-  const src = offlineCtx.createBufferSource();
+  const src = offline.createBufferSource();
   src.buffer = decoded;
 
-  // Gentle AM modulation
-  const mod = offlineCtx.createOscillator();
-  mod.type = "square";
-  mod.frequency.value = 90;
+  /* ==============================================
+       1. CLEAN, ROBOTIC F0 FLATTENING (AM SINE)
+     ============================================== */
+  const osc = offline.createOscillator();
+  osc.type = "sine";          // smoother, not buzzy
+  osc.frequency.value = 110;  // fixed "robotic" pitch
 
-  const modGain = offlineCtx.createGain();
-  modGain.gain.value = 0.25;
+  const modGain = offline.createGain();
+  modGain.gain.value = 0.15;  // amount of robotic character
 
-  mod.connect(modGain.gain);
+  // AM: oscillator controls gain of the voice
+  osc.connect(modGain.gain);
   src.connect(modGain);
 
-  // Highpass
-  const hp = offlineCtx.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.value = 250;
+  /* ==============================================
+       2. ADD SYNTHETIC DIGITAL NOISE (OPTIONAL)
+     ============================================== */
+  const noiseBuffer = offline.createBuffer(1, decoded.length, decoded.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
 
-  modGain.connect(hp);
-
-  // Bitcrusher
-  const crusher = offlineCtx.createWaveShaper();
-  const bits = 10;
-  const steps = 2 ** bits;
-  const curve = new Float32Array(65536);
-  for (let i = 0; i < 65536; i++) {
-    let x = (i / 65536) * 2 - 1;
-    curve[i] = Math.round(x * steps) / steps;
+  for (let i = 0; i < noiseData.length; i++) {
+    // “digital” noise — small but not white noise
+    noiseData[i] = (Math.random() - 0.5) * 0.02;
   }
-  crusher.curve = curve;
 
-  hp.connect(crusher);
-  crusher.connect(offlineCtx.destination);
+  const noise = offline.createBufferSource();
+  noise.buffer = noiseBuffer;
 
-  mod.start(0);
+  const noiseGain = offline.createGain();
+  noiseGain.gain.value = 0.01; // very subtle
+
+  noise.connect(noiseGain);
+
+  /* ==============================================
+       3. FINAL MIX
+     ============================================== */
+  const mix = offline.createGain();
+  modGain.connect(mix);
+  noiseGain.connect(mix);
+  mix.connect(offline.destination);
+
+  // Start
+  osc.start(0);
   src.start(0);
+  noise.start(0);
 
-  const rendered = await offlineCtx.startRendering();
+  // Render
+  const rendered = await offline.startRendering();
+
   return audioBufferToWavURL(rendered);
 }
+
+
 
 /* ===============================
    WAV EXPORT HELPER
