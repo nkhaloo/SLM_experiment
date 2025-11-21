@@ -201,67 +201,107 @@ async function handleRecordingStop() {
 }
 
 /* ===============================
-   ROBOTIC DSP EFFECT
+   ROBOTIC DSP (Offline, Instant WAV)
 ================================ */
 async function applyRoboticEffect(url) {
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();
-  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-  const source = audioCtx.createBufferSource();
-  source.buffer = audioBuffer;
+  // Decode
+  const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const decoded = await tempCtx.decodeAudioData(arrayBuffer);
+  tempCtx.close();
 
-  // Flatten F0
-  const mod = audioCtx.createOscillator();
+  // Offline processing
+  const offlineCtx = new OfflineAudioContext(
+    decoded.numberOfChannels,
+    decoded.length,
+    decoded.sampleRate
+  );
+
+  const src = offlineCtx.createBufferSource();
+  src.buffer = decoded;
+
+  // Soft AM modulation (gentle robotic effect)
+  const mod = offlineCtx.createOscillator();
   mod.type = "square";
   mod.frequency.value = 90;
 
-  const modGain = audioCtx.createGain();
-  modGain.gain.value = 0.7;
+  const modGain = offlineCtx.createGain();
+  modGain.gain.value = 0.25;
 
   mod.connect(modGain.gain);
-  source.connect(modGain);
+  src.connect(modGain);
 
-  // High-pass filter
-  const hp = audioCtx.createBiquadFilter();
+  // Soft highpass
+  const hp = offlineCtx.createBiquadFilter();
   hp.type = "highpass";
-  hp.frequency.value = 800;
+  hp.frequency.value = 250;
+
   modGain.connect(hp);
 
-  // Bitcrusher
-  const bitcrush = audioCtx.createWaveShaper();
-  const bits = 6;
-  const n = 2 ** bits;
+  // Gentle bitcrusher (retro TTS-ish)
+  const crusher = offlineCtx.createWaveShaper();
+  const bits = 10;
+  const steps = 2 ** bits;
   const curve = new Float32Array(65536);
-
   for (let i = 0; i < 65536; i++) {
-    const x = (i / 65536) * 2 - 1;
-    curve[i] = Math.round(x * n) / n;
+    let x = (i / 65536) * 2 - 1;
+    curve[i] = Math.round(x * steps) / steps;
   }
-  bitcrush.curve = curve;
+  crusher.curve = curve;
 
-  hp.connect(bitcrush);
+  hp.connect(crusher);
+  crusher.connect(offlineCtx.destination);
 
-  const dest = audioCtx.createMediaStreamDestination();
-  bitcrush.connect(dest);
+  mod.start(0);
+  src.start(0);
 
-  mod.start();
-  source.start();
+  const rendered = await offlineCtx.startRendering();
 
-  const recorder = new MediaRecorder(dest.stream);
-  let chunks = [];
+  // Export as WAV (instant)
+  return audioBufferToWavURL(rendered);
+}
 
-  return new Promise(resolve => {
-    recorder.ondataavailable = e => chunks.push(e.data);
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      resolve(URL.createObjectURL(blob));
-    };
-    recorder.start();
-    setTimeout(() => recorder.stop(), audioBuffer.duration * 1000);
-  });
+/* ===============================
+   WAV Export Helper (Instant)
+================================ */
+function audioBufferToWavURL(buffer) {
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const length = buffer.length * numChannels * 2 + 44;
+  const arrayBuffer = new ArrayBuffer(length);
+  const view = new DataView(arrayBuffer);
+
+  let pos = 0;
+  const write = s => { for (let i = 0; i < s.length; i++) view.setUint8(pos++, s.charCodeAt(i)); };
+
+  write("RIFF");
+  view.setUint32(pos, 36 + buffer.length * numChannels * 2, true); pos += 4;
+  write("WAVE");
+  write("fmt ");
+  view.setUint32(pos, 16, true); pos += 4;
+  view.setUint16(pos, 1, true); pos += 2;
+  view.setUint16(pos, numChannels, true); pos += 2;
+  view.setUint32(pos, sampleRate, true); pos += 4;
+  view.setUint32(pos, sampleRate * numChannels * 2, true); pos += 4;
+  view.setUint16(pos, numChannels * 2, true); pos += 2;
+  view.setUint16(pos, 16, true); pos += 2;
+  write("data");
+  view.setUint32(pos, buffer.length * numChannels * 2, true); pos += 4;
+
+  const channels = [];
+  for (let c = 0; c < numChannels; c++) channels.push(buffer.getChannelData(c));
+
+  for (let i = 0; i < buffer.length; i++) {
+    for (let c = 0; c < numChannels; c++) {
+      let sample = Math.max(-1, Math.min(1, channels[c][i]));
+      view.setInt16(pos, sample * 32767, true);
+      pos += 2;
+    }
+  }
+
+  return URL.createObjectURL(new Blob([arrayBuffer], { type: "audio/wav" }));
 }
 
 /* ===============================
