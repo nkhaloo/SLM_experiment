@@ -219,7 +219,6 @@
   <h2>Thank you!</h2>
 </section>
 
-
 <script>
 /* ===============================
    Firebase Init
@@ -378,7 +377,7 @@ const trials = [
 let userId = null;
 let condition = null; // "natural" or "robotic"
 let currentTrialIndex = 0;
-let pendingTurnData = null; // holds audio + model text for current trial
+let pendingTurnData = null;
 
 const recordBtn = document.getElementById("recordBtn");
 const surveyBtn = document.getElementById("surveyBtn");
@@ -393,8 +392,8 @@ const trialContextEl = document.getElementById("trialContext");
 const trialQuestionEl = document.getElementById("trialQuestion");
 
 /* ===============================
-      SCREEN LOGIC
-=============================== */
+   SCREEN LOGIC
+================================ */
 
 // Welcome → Instructions
 document.getElementById("welcomeContinueBtn").onclick = () => {
@@ -407,10 +406,17 @@ document.getElementById("beginExperimentBtn").onclick = async () => {
   condition = Math.random() < 0.5 ? "natural" : "robotic";
   userId = "user_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
 
+  // Randomize trial order once per participant
+  trials.sort(() => Math.random() - 0.5);
+
   await db.collection("users").doc(userId).set({
     userId,
     condition,
-    createdAt: new Date()
+    createdAt: new Date(),
+    trialOrder: trials.map(t => ({
+      domain: t.domain,
+      type: t.type
+    }))
   });
 
   currentTrialIndex = 0;
@@ -418,6 +424,12 @@ document.getElementById("beginExperimentBtn").onclick = async () => {
 
   document.getElementById("instructions").classList.remove("active");
   interaction.classList.add("active");
+};
+
+// After audio is heard → show per-trial survey
+surveyBtn.onclick = () => {
+  interaction.classList.remove("active");
+  trialSurvey.classList.add("active");
 };
 
 /* ===============================
@@ -429,16 +441,19 @@ function loadTrial(i) {
   trialContextEl.textContent = t.context;
   trialQuestionEl.textContent = t.question;
 
-  // reset UI state
+  // reset audio (Safari-safe)
+  responseAudio.pause();
   responseAudio.src = "";
+  responseAudio.load();
+
   statusEl.textContent = "";
   surveyBtn.style.display = "none";
   recordBtn.disabled = false;
+  recordBtn.textContent = "Ask";
   pendingTurnData = null;
 
-  // clear per-trial survey radios
   ["accuracy", "risk", "validate"].forEach(name => {
-    document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.checked = false);
+    document.querySelectorAll(`input[name="${name}"]`).forEach(r => (r.checked = false));
   });
 }
 
@@ -462,30 +477,27 @@ recordBtn.onclick = async () => {
     mediaRecorder.stop();
     recordBtn.textContent = "Ask";
     statusEl.innerHTML = `<div class="dots"><span></span><span></span><span></span></div>`;
-    recordBtn.disabled = true; // prevent double recordings while processing
+    recordBtn.disabled = true;
   }
 };
 
 /* ===============================
-   HANDLE RECORDING STOP (FIXED)
+   HANDLE RECORDING STOP
 ================================ */
 async function handleRecordingStop() {
   const ts = Date.now();
-  const trial = trials[currentTrialIndex]; // use only once
+  const t = trials[currentTrialIndex];
 
   try {
-    /* 1. Upload user audio (webm) */
+    // Upload user recording (webm)
     const userBlob = new Blob(chunks, { type: "audio/webm" });
-
     const userRef = storage.ref(
-      `users/${userId}/trial_${currentTrialIndex + 1}_${trial.domain}_${trial.type}_user_${ts}.webm`
+      `users/${userId}/trial_${currentTrialIndex + 1}_${t.domain}_${t.type}_user_${ts}.webm`
     );
-
     await userRef.put(userBlob);
     const userAudioURL = await userRef.getDownloadURL();
 
-
-    /* 2. Call backend → returns TTS .webm */
+    // Call backend to get model reply (.webm)
     const response = await fetch("https://callopenai-ks3vpjhzoq-uc.a.run.app", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -499,76 +511,44 @@ async function handleRecordingStop() {
       return;
     }
 
-
-    /* 3. Convert model .webm → WAV */
+    // Convert model .webm → WAV
     let wavLocalURL = await audioWebmToWavURL(data.audio);
 
-    /* 4. Apply robotic filtering */
+    // Apply robotic DSP ONLY if needed
     if (condition === "robotic") {
       wavLocalURL = await applyRoboticEffect(wavLocalURL);
     }
 
-    /* 5. Upload WAV reply (this is the only saved model audio) */
+    // Upload WAV to Firebase
     const wavBlob = await fetch(wavLocalURL).then(r => r.blob());
-
     const replyRef = storage.ref(
-      `users/${userId}/trial_${currentTrialIndex + 1}_${trial.domain}_${trial.type}_reply_${ts}.wav`
+      `users/${userId}/trial_${currentTrialIndex + 1}_${t.domain}_${t.type}_reply_${ts}.wav`
     );
-
     await replyRef.put(wavBlob, { contentType: "audio/wav" });
     const wavFirebaseURL = await replyRef.getDownloadURL();
 
+    // Save for per-trial survey
+    pendingTurnData = {
+      userAudioURL,
+      replyAudioURL: wavFirebaseURL,
+      modelText: data.text || ""
+    };
 
-    /* 6. Play result */
+    // Play WAV
     responseAudio.src = wavFirebaseURL;
     statusEl.innerHTML = "";
     surveyBtn.style.display = "inline-block";
 
-
-    /* 7. Store pending data (saved after per-trial survey) */
-    pendingTurnData = {
-      userAudioURL,
-      replyAudioURL: wavFirebaseURL,
-      modelText: data.text || "",
-      domain: trial.domain,
-      type: trial.type,
-      question: trial.question
-    };
-
   } catch (err) {
-    console.error(err);
+    console.error("Recording stop error:", err);
     statusEl.textContent = "⚠️ Error occurred. Please try again.";
   } finally {
     recordBtn.disabled = true;
   }
 }
 
-/* After audio → per-trial survey */
-surveyBtn.onclick = () => {
-  interaction.classList.remove("active");
-  trialSurvey.classList.add("active");
-};
-
-
-
-/* ===============================
-   Convert WebM → WAV
-================================ */
-async function audioWebmToWavURL(webmUrl) {
-  const response = await fetch(webmUrl);
-  const arrayBuffer = await response.arrayBuffer();
-
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const decoded = await ctx.decodeAudioData(arrayBuffer);
-  ctx.close();
-
-  return audioBufferToWavURL(decoded);
-}
-
-
 /* ===============================
    ROBOTIC DSP EFFECT
-   (mild AM + light noise)
 ================================ */
 async function applyRoboticEffect(url) {
   const response = await fetch(url);
@@ -587,10 +567,10 @@ async function applyRoboticEffect(url) {
   const src = offline.createBufferSource();
   src.buffer = decoded;
 
-  // Mild AM for robotic monotone
+  // Mild AM
   const osc = offline.createOscillator();
   osc.type = "sine";
-  osc.frequency.value = 110; // "robotic" pitch
+  osc.frequency.value = 110;
 
   const modGain = offline.createGain();
   modGain.gain.value = 0.15;
@@ -598,7 +578,7 @@ async function applyRoboticEffect(url) {
   osc.connect(modGain.gain);
   src.connect(modGain);
 
-  // Light digital noise
+  // Light noise
   const noiseBuffer = offline.createBuffer(1, decoded.length, decoded.sampleRate);
   const noiseData = noiseBuffer.getChannelData(0);
   for (let i = 0; i < noiseData.length; i++) {
@@ -613,7 +593,6 @@ async function applyRoboticEffect(url) {
 
   noise.connect(noiseGain);
 
-  // Mix
   const mix = offline.createGain();
   modGain.connect(mix);
   noiseGain.connect(mix);
@@ -627,6 +606,19 @@ async function applyRoboticEffect(url) {
   return audioBufferToWavURL(rendered);
 }
 
+/* ===============================
+   WEBM → WAV HELPER
+================================ */
+async function audioWebmToWavURL(webmUrl) {
+  const response = await fetch(webmUrl);
+  const arrayBuffer = await response.arrayBuffer();
+
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const decoded = await ctx.decodeAudioData(arrayBuffer);
+  ctx.close();
+
+  return audioBufferToWavURL(decoded);
+}
 
 /* ===============================
    WAV EXPORT HELPER
@@ -640,7 +632,7 @@ function audioBufferToWavURL(buffer) {
   const view = new DataView(arrayBuffer);
 
   let pos = 0;
-  const write = s => { for (let c of s) view.setUint8(pos++, c.charCodeAt(0)); };
+  const write = s => { for (let i = 0; i < s.length; i++) view.setUint8(pos++, s.charCodeAt(i)); };
 
   write("RIFF");
   view.setUint32(pos, 36 + buffer.length * numChannels * 2, true); pos += 4;
@@ -657,11 +649,14 @@ function audioBufferToWavURL(buffer) {
   view.setUint32(pos, buffer.length * numChannels * 2, true); pos += 4;
 
   const channels = [];
-  for (let c = 0; c < numChannels; c++) channels.push(buffer.getChannelData(c));
+  for (let c = 0; c < numChannels; c++) {
+    channels.push(buffer.getChannelData(c));
+  }
 
   for (let i = 0; i < buffer.length; i++) {
     for (let c = 0; c < numChannels; c++) {
-      let sample = Math.max(-1, Math.min(1, channels[c][i]));
+      let sample = channels[c][i];
+      sample = Math.max(-1, Math.min(1, sample));
       view.setInt16(pos, sample * 32767, true);
       pos += 2;
     }
@@ -669,7 +664,6 @@ function audioBufferToWavURL(buffer) {
 
   return URL.createObjectURL(new Blob([arrayBuffer], { type: "audio/wav" }));
 }
-
 
 /* ===============================
    PER-TRIAL SURVEY HANDLER
@@ -690,7 +684,6 @@ document.getElementById("trialSurveyNextBtn").onclick = async () => {
 
   const trial = trials[currentTrialIndex];
 
-  // Build document to store
   const docData = {
     userId,
     condition,
@@ -711,7 +704,6 @@ document.getElementById("trialSurveyNextBtn").onclick = async () => {
 
   await db.collection("users").doc(userId).collection("conversation").add(docData);
 
-  // move to next trial or final survey
   trialSurvey.classList.remove("active");
 
   if (currentTrialIndex < trials.length - 1) {
@@ -723,14 +715,16 @@ document.getElementById("trialSurveyNextBtn").onclick = async () => {
   }
 };
 
-
 /* ===============================
    FINAL POST-SURVEY
 ================================ */
 document.getElementById("submitBtn").onclick = async () => {
   const satisfaction = document.getElementById("satisfaction").value;
   const feedback = document.getElementById("feedback").value.trim();
-  if (!satisfaction) return alert("Please answer the final satisfaction question.");
+  if (!satisfaction) {
+    alert("Please answer the final satisfaction question.");
+    return;
+  }
 
   await db.collection("users").doc(userId).set({
     postSurvey: { satisfaction, feedback, timestamp: new Date() }
