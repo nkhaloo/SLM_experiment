@@ -196,19 +196,67 @@
 </section>
 
 <!-- ===============================
-      FINAL POST-SURVEY
+      FINAL POST-SURVEY (Anthropomorphism)
 =============================== -->
 <section id="postSurvey">
-  <h2>Final Questions</h2>
-  <select id="satisfaction">
-    <option value="">How positive was the model response overall?</option>
-    <option value="1">1 - Very negative</option>
-    <option value="2">2 - Negative</option>
-    <option value="3">3 - Neutral</option>
-    <option value="4">4 - Positive</option>
-    <option value="5">5 - Very positive</option>
-  </select><br>
-  <textarea id="feedback" rows="3" style="width:90%;" placeholder="Any comments..."></textarea><br>
+  <h2>Final Questionnaire</h2>
+  <p>Please rate your impression of the system on the following items.</p>
+
+  <div class="survey-block">
+    <h3>1. Authenticity </h3>
+    <div class="survey-options">
+      <label><input type="radio" name="authenticity" value="1"> Completely fake</label>
+      <label><input type="radio" name="authenticity" value="2"> Somewhat fake</label>
+      <label><input type="radio" name="authenticity" value="3"> Neither fake nor natural</label>
+      <label><input type="radio" name="authenticity" value="4"> Somewhat natural</label>
+      <label><input type="radio" name="authenticity" value="5"> Completely natural</label>
+    </div>
+  </div>
+
+  <div class="survey-block">
+    <h3>2. Humanism </h3>
+    <div class="survey-options">
+      <label><input type="radio" name="humanism" value="1"> Completely machine-like</label>
+      <label><input type="radio" name="humanism" value="2"> Somewhat machine-like</label>
+      <label><input type="radio" name="humanism" value="3"> Neither</label>
+      <label><input type="radio" name="humanism" value="4"> Somewhat human-like</label>
+      <label><input type="radio" name="humanism" value="5"> Completely human-like</label>
+    </div>
+  </div>
+
+  <div class="survey-block">
+    <h3>3. Awareness </h3>
+    <div class="survey-options">
+      <label><input type="radio" name="awareness" value="1"> Completely unconscious</label>
+      <label><input type="radio" name="awareness" value="2"> Somewhat unconscious</label>
+      <label><input type="radio" name="awareness" value="3"> Neither</label>
+      <label><input type="radio" name="awareness" value="4"> Somewhat conscious</label>
+      <label><input type="radio" name="awareness" value="5"> Completely conscious</label>
+    </div>
+  </div>
+
+  <div class="survey-block">
+    <h3>4. Realism </h3>
+    <div class="survey-options">
+      <label><input type="radio" name="realism" value="1"> Completely artificial</label>
+      <label><input type="radio" name="realism" value="2"> Somewhat artificial</label>
+      <label><input type="radio" name="realism" value="3"> Neither</label>
+      <label><input type="radio" name="realism" value="4"> Somewhat lifelike</label>
+      <label><input type="radio" name="realism" value="5"> Completely lifelike</label>
+    </div>
+  </div>
+
+  <div class="survey-block">
+    <h3>5. Competence </h3>
+    <div class="survey-options">
+      <label><input type="radio" name="competence" value="1"> Completely incompetent</label>
+      <label><input type="radio" name="competence" value="2"> Somewhat incompetent</label>
+      <label><input type="radio" name="competence" value="3"> Neither</label>
+      <label><input type="radio" name="competence" value="4"> Somewhat competent</label>
+      <label><input type="radio" name="competence" value="5"> Completely competent</label>
+    </div>
+  </div>
+
   <button id="submitBtn">Submit</button>
 </section>
 
@@ -218,6 +266,7 @@
 <section id="thanks">
   <h2>Thank you!</h2>
 </section>
+
 
 <script>
 /* ===============================
@@ -716,23 +765,48 @@ document.getElementById("trialSurveyNextBtn").onclick = async () => {
 };
 
 /* ===============================
-   FINAL POST-SURVEY
+   FINAL ANTHROPOMORPHISM SURVEY
 ================================ */
 document.getElementById("submitBtn").onclick = async () => {
-  const satisfaction = document.getElementById("satisfaction").value;
-  const feedback = document.getElementById("feedback").value.trim();
-  if (!satisfaction) {
-    alert("Please answer the final satisfaction question.");
+
+  const getVal = (name) =>
+    document.querySelector(`input[name="${name}"]:checked`)?.value || null;
+
+  const authenticity = getVal("authenticity");
+  const humanism = getVal("humanism");
+  const awareness = getVal("awareness");
+  const realism = getVal("realism");
+  const competence = getVal("competence");
+
+  if (!authenticity || !humanism || !awareness || !realism || !competence) {
+    alert("Please answer all questions before submitting.");
     return;
   }
 
-  await db.collection("users").doc(userId).set({
-    postSurvey: { satisfaction, feedback, timestamp: new Date() }
-  }, { merge: true });
+  await db.collection("users").doc(userId).set(
+    {
+      anthropomorphism: {
+        authenticity,
+        humanism,
+        awareness,
+        realism,
+        competence,
+        totalScore:
+          Number(authenticity) +
+          Number(humanism) +
+          Number(awareness) +
+          Number(realism) +
+          Number(competence),
+        timestamp: new Date()
+      }
+    },
+    { merge: true }
+  );
 
   postSurvey.classList.remove("active");
   document.getElementById("thanks").classList.add("active");
 };
+
 </script>
 
 </body>
