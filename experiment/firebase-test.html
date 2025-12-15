@@ -9,6 +9,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+
+
 
   <style>
     body {
@@ -290,9 +293,17 @@ const firebaseConfig = {
   appId: "1:762879513861:web:3b67a55dc2ba727308536c",
   measurementId: "G-9WYB65Z78J"
 };
+
 firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
+
+// Anonymous auth (required for Firestore & Storage rules)
+auth.signInAnonymously().catch((error) => {
+  console.error("Anonymous auth failed:", error);
+});
 
 /* ===============================
    Trial definitions (20 trials)
