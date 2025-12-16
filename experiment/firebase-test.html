@@ -9,7 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
 
 
 
@@ -283,7 +282,7 @@
 <script>
   
 /* ===============================
-   Firebase Init + Auth Readiness
+   Firebase Init 
 ================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyBDOb-3I8TD3ZjBxtqyQNBF8YFIuIAdsKc",
@@ -297,24 +296,9 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-let authReady = false;
-
-// Start anonymous auth
-auth.signInAnonymously().catch((error) => {
-  console.error("Anonymous auth failed:", error);
-});
-
-// Track auth readiness
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    authReady = true;
-    console.log("Anonymous auth ready:", user.uid);
-  }
-});
 
 
 /* ===============================
