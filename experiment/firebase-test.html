@@ -281,8 +281,9 @@
 
 
 <script>
+  
 /* ===============================
-   Firebase Init
+   Firebase Init + Auth Readiness
 ================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyBDOb-3I8TD3ZjBxtqyQNBF8YFIuIAdsKc",
@@ -300,10 +301,21 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// Anonymous auth (required for Firestore & Storage rules)
+let authReady = false;
+
+// Start anonymous auth
 auth.signInAnonymously().catch((error) => {
   console.error("Anonymous auth failed:", error);
 });
+
+// Track auth readiness
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    authReady = true;
+    console.log("Anonymous auth ready:", user.uid);
+  }
+});
+
 
 /* ===============================
    Trial definitions (20 trials)
