@@ -111,39 +111,61 @@
 <body>
 
 <!-- ===============================
-      WELCOME SCREEN
+      WELCOME SCREEN (Slide 1)
 =============================== -->
 <section id="welcome" class="active">
-  <h2>Welcome to the Spoken Language Model Study</h2>
+  <h2>Welcome!</h2>
+
   <p>
-    In this study, you will interact with an AI system that communicates <strong>through speech</strong>.
-    You’ll ask several questions out loud and evaluate the system’s responses.
+    In today’s study, you will interact with a chat system.
   </p>
-  <p>This study takes about <strong>10–12 minutes</strong>.</p>
-  <button id="welcomeContinueBtn">Begin</button>
+
+  <p>
+    Hello! The system can answer questions about work, health, and general facts.
+  </p>
+
+  <p>
+    On each trial, you will click on a button to ask the system a pre-set question
+    (e.g., “How far away is the moon?”). Then the system will provide a response.
+  </p>
+
+  <p><strong>
+    For this study, you will need to be able to see the full screen and listen to audio.
+  </strong></p>
+
+  <button id="welcomeContinueBtn">Continue</button>
 </section>
 
 
 <!-- ===============================
-      INSTRUCTIONS SCREEN
+      ENVIRONMENT SETUP (Slide 2)
 =============================== -->
-<section id="instructions">
-  <h2>How the Study Works</h2>
+<section id="environment">
+  <h2>Before We Begin</h2>
 
-  <p>Each trial will follow the same steps:</p>
+  <p>Before we begin, you’ll need to set up your environment.</p>
+
   <ul>
-    <li><strong>Read</strong> the context and question on the screen.</li>
-    <li><strong>Press “Ask”</strong> to start recording.</li>
-    <li><strong>Read the question aloud.</strong></li>
-    <li><strong>Press “Stop”</strong> to finish recording.</li>
-    <li><strong>Listen</strong> to the system’s spoken response.</li>
-    <li><strong>Answer three questions</strong> about the response.</li>
+    <li>Quiet room</li>
+    <li>No background noise (e.g., dog barking, other people talking, TV on)</li>
+    <li>Silence notifications on your computer and phone</li>
   </ul>
 
-  <p>You will complete <strong>20 questions</strong> in total.</p>
+  <p><strong>
+    Below, click to confirm you have met these environment requirements:
+  </strong></p>
 
-  <button id="beginExperimentBtn">Start the Experiment</button>
+  <label style="display:block; text-align:left; max-width:500px; margin:1rem auto;">
+    <input type="checkbox" id="envConfirm" />
+    I confirm I’m in a quiet room with no background noise and I’ve silenced
+    notifications on my computer and phone
+  </label>
+
+  <button id="envContinueBtn" disabled>Continue</button>
 </section>
+
+
+
 
 
 <!-- ===============================
@@ -460,18 +482,28 @@ const trialQuestionEl = document.getElementById("trialQuestion");
    SCREEN LOGIC
 ================================ */
 
-// Welcome → Instructions
+// Welcome → Environment
 document.getElementById("welcomeContinueBtn").onclick = () => {
   document.getElementById("welcome").classList.remove("active");
-  document.getElementById("instructions").classList.add("active");
+  document.getElementById("environment").classList.add("active");
 };
 
-// Instructions → Experiment start
-document.getElementById("beginExperimentBtn").onclick = async () => {
+// Environment confirmation logic
+const envCheckbox = document.getElementById("envConfirm");
+const envContinueBtn = document.getElementById("envContinueBtn");
+
+envCheckbox.onchange = () => {
+  envContinueBtn.disabled = !envCheckbox.checked;
+};
+
+
+// Environment → Experiment start
+envContinueBtn.onclick = async () => {
+  document.getElementById("environment").classList.remove("active");
+
   condition = Math.random() < 0.5 ? "natural" : "robotic";
   userId = "user_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
 
-  // Randomize trial order once per participant
   trials.sort(() => Math.random() - 0.5);
 
   await db.collection("users").doc(userId).set({
@@ -486,10 +518,10 @@ document.getElementById("beginExperimentBtn").onclick = async () => {
 
   currentTrialIndex = 0;
   loadTrial(currentTrialIndex);
-
-  document.getElementById("instructions").classList.remove("active");
   interaction.classList.add("active");
 };
+
+
 
 // After audio is heard → show per-trial survey
 surveyBtn.onclick = () => {
