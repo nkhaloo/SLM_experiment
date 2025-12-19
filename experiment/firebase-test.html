@@ -190,6 +190,45 @@
   </div>
 </section>
 
+
+<!-- ===============================
+      AUDIO CALIBRATION
+=============================== -->
+<section id="audioCalibration">
+  <h2>Audio Calibration</h2>
+
+  <p>
+    Play the audio below. You can adjust the volume on your device until it is at a
+    comfortable listening level.
+  </p>
+
+  <p><strong>
+    Important! Please keep the level the same throughout the experiment.
+  </strong></p>
+
+  <audio id="calibrationAudio" controls>
+    <source src="attention_check/audio_check.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
+  <p style="margin-top:1.5rem;">
+    After listening, please answer the question below.
+  </p>
+
+  <div class="survey-block">
+    <h3>What color was mentioned in the recording?</h3>
+    <div class="survey-options">
+      <label><input type="radio" name="calibrationCheck" value="yellow"> Yellow</label>
+      <label><input type="radio" name="calibrationCheck" value="green"> Green</label>
+      <label><input type="radio" name="calibrationCheck" value="red"> Red</label>
+    </div>
+  </div>
+
+  <button id="calibrationContinueBtn">Continue</button>
+</section>
+
+
+
 <!-- ===============================
       PER-TRIAL SURVEY
 =============================== -->
@@ -497,9 +536,38 @@ envCheckbox.onchange = () => {
 };
 
 
-// Environment → Experiment start
-envContinueBtn.onclick = async () => {
+// Environment → Audio Calibration
+envContinueBtn.onclick = () => {
   document.getElementById("environment").classList.remove("active");
+  document.getElementById("audioCalibration").classList.add("active");
+};
+
+
+
+// After audio is heard → show per-trial survey
+surveyBtn.onclick = () => {
+  interaction.classList.remove("active");
+  trialSurvey.classList.add("active");
+};
+
+// Audio calibration → Experiment start
+document.getElementById("calibrationContinueBtn").onclick = async () => {
+  const answer = document.querySelector(
+    'input[name="calibrationCheck"]:checked'
+  );
+
+  if (!answer) {
+    alert("Please answer the question before continuing.");
+    return;
+  }
+
+  // Enforce correct answer (adjust if needed)
+  if (answer.value !== "green") {
+    alert("That answer is incorrect. Please listen again and try once more.");
+    return;
+  }
+
+  document.getElementById("audioCalibration").classList.remove("active");
 
   condition = Math.random() < 0.5 ? "natural" : "robotic";
   userId = "user_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
@@ -510,6 +578,7 @@ envContinueBtn.onclick = async () => {
     userId,
     condition,
     createdAt: new Date(),
+    audioCalibrationPassed: true,
     trialOrder: trials.map(t => ({
       domain: t.domain,
       type: t.type
@@ -521,13 +590,6 @@ envContinueBtn.onclick = async () => {
   interaction.classList.add("active");
 };
 
-
-
-// After audio is heard → show per-trial survey
-surveyBtn.onclick = () => {
-  interaction.classList.remove("active");
-  trialSurvey.classList.add("active");
-};
 
 /* ===============================
    Load Trial
