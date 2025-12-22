@@ -227,6 +227,38 @@
   <button id="calibrationContinueBtn">Continue</button>
 </section>
 
+<!-- ===============================
+      TASK INSTRUCTIONS (NEW)
+=============================== -->
+<section id="taskInstructions">
+  <h2>Instructions</h2>
+
+  <p>
+    Hello! The system can answer questions about work, health, and general facts.
+  </p>
+
+  <p>
+    On each trial, you will click on a button to ask the system a pre-set question
+    (e.g., “How far away is the moon?”). Then the system will provide a response.
+  </p>
+
+  <p><strong>Your task will be to rate the system's response:</strong></p>
+
+  <ul>
+    <li>How accurate is the system's response?</li>
+    <li>
+      If you were relying on this information, how risky would it be if the system
+      got this information wrong?
+    </li>
+    <li>Would you validate the system's answer with other sources?</li>
+  </ul>
+
+  <p><strong>There are no right or wrong answers.</strong></p>
+
+  <button id="taskInstructionsContinueBtn">Continue</button>
+</section>
+
+
 
 
 <!-- ===============================
@@ -266,6 +298,112 @@
 
   <button id="trialSurveyNextBtn">Next</button>
 </section>
+
+<!-- ===============================
+      HUMAN-LIKENESS RATING
+=============================== -->
+<section id="humanLikert">
+  <h2>System Rating</h2>
+
+  <p>
+    How human-like was the machine you interacted with?
+  </p>
+
+  <div style="margin: 2rem auto; max-width: 500px;">
+    <input
+      type="range"
+      id="humanLikenessSlider"
+      min="0"
+      max="7"
+      step="0.01"
+      value="3.5"
+      style="width: 100%;"
+    />
+
+    <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+      <span>Not at all human-like</span>
+      <span>Very human-like</span>
+    </div>
+
+    <p style="margin-top:1rem;">
+      Selected value: <strong><span id="humanLikenessValue">3.5</span></strong>
+    </p>
+  </div>
+
+  <button id="humanLikertContinueBtn">Continue</button>
+</section>
+
+
+<!-- ===============================
+      SYSTEM IMPRESSIONS
+=============================== -->
+<section id="systemImpression">
+  <h2>System Impressions</h2>
+
+  <p>
+    Now, we want you to answer some questions about the system that you just interacted with.
+  </p>
+
+  <div class="survey-block">
+    <h3>The system was knowledgeable about my questions.</h3>
+    <div class="survey-options">
+      <label><input type="radio" name="knowledgeable" value="1"> True</label>
+      <label><input type="radio" name="knowledgeable" value="0"> False</label>
+    </div>
+  </div>
+
+  <div class="survey-block">
+    <h3>The system's responses to my questions were in my best interest.</h3>
+    <div class="survey-options">
+      <label><input type="radio" name="bestInterest" value="1"> True</label>
+      <label><input type="radio" name="bestInterest" value="0"> False</label>
+    </div>
+  </div>
+
+  <div class="survey-block">
+    <h3>I believe the system's responses to me were honest.</h3>
+    <div class="survey-options">
+      <label><input type="radio" name="honest" value="1"> True</label>
+      <label><input type="radio" name="honest" value="0"> False</label>
+    </div>
+  </div>
+
+  <div class="survey-block">
+    <h3>I believe the system's responses to me were unbiased.</h3>
+    <div class="survey-options">
+      <label><input type="radio" name="unbiased" value="1"> True</label>
+      <label><input type="radio" name="unbiased" value="0"> False</label>
+    </div>
+  </div>
+
+  <div class="survey-block">
+    <h3>Please rate your impression of the system:</h3>
+    <p><em>Untrustworthy ~ Trustworthy</em></p>
+    <div class="survey-options">
+      <label><input type="radio" name="trustworthiness" value="1"> Extremely untrustworthy</label>
+      <label><input type="radio" name="trustworthiness" value="2"> Somewhat untrustworthy</label>
+      <label><input type="radio" name="trustworthiness" value="3"> Neither untrustworthy nor trustworthy</label>
+      <label><input type="radio" name="trustworthiness" value="4"> Somewhat trustworthy</label>
+      <label><input type="radio" name="trustworthiness" value="5"> Extremely trustworthy</label>
+    </div>
+  </div>
+
+  <div class="survey-block">
+    <h3>Please rate your impression of the system:</h3>
+    <p><em>Tool ~ Collaborator</em></p>
+    <div class="survey-options">
+      <label><input type="radio" name="collaborator" value="1"> Extremely like a tool</label>
+      <label><input type="radio" name="collaborator" value="2"> Somewhat like a tool</label>
+      <label><input type="radio" name="collaborator" value="3"> Neither a tool nor a collaborator</label>
+      <label><input type="radio" name="collaborator" value="4"> Somewhat like a collaborator</label>
+      <label><input type="radio" name="collaborator" value="5"> Extremely like a collaborator</label>
+    </div>
+  </div>
+
+  <button id="systemImpressionContinueBtn">Continue</button>
+</section>
+
+
 
 <!-- ===============================
       FINAL POST-SURVEY (Anthropomorphism)
@@ -512,10 +650,21 @@ const responseAudio = document.getElementById("responseAudio");
 const interaction = document.getElementById("interaction");
 const postSurvey = document.getElementById("postSurvey");
 const trialSurvey = document.getElementById("trialSurvey");
+const systemImpression = document.getElementById("systemImpression");
+const humanLikert = document.getElementById("humanLikert");
+const humanLikenessSlider = document.getElementById("humanLikenessSlider");
+const humanLikenessValue = document.getElementById("humanLikenessValue");
+
+
 
 const trialCounterEl = document.getElementById("trialCounter");
 const trialContextEl = document.getElementById("trialContext");
 const trialQuestionEl = document.getElementById("trialQuestion");
+
+humanLikenessSlider.oninput = () => {
+  humanLikenessValue.textContent = humanLikenessSlider.value;
+};
+
 
 /* ===============================
    SCREEN LOGIC
@@ -535,14 +684,11 @@ envCheckbox.onchange = () => {
   envContinueBtn.disabled = !envCheckbox.checked;
 };
 
-
 // Environment → Audio Calibration
 envContinueBtn.onclick = () => {
   document.getElementById("environment").classList.remove("active");
   document.getElementById("audioCalibration").classList.add("active");
 };
-
-
 
 // After audio is heard → show per-trial survey
 surveyBtn.onclick = () => {
@@ -550,7 +696,7 @@ surveyBtn.onclick = () => {
   trialSurvey.classList.add("active");
 };
 
-// Audio calibration → Experiment start
+// Audio calibration → Task Instructions
 document.getElementById("calibrationContinueBtn").onclick = async () => {
   const answer = document.querySelector(
     'input[name="calibrationCheck"]:checked'
@@ -561,8 +707,8 @@ document.getElementById("calibrationContinueBtn").onclick = async () => {
     return;
   }
 
-  // Enforce correct answer (adjust if needed)
-  if (answer.value !== "green") {
+  // Enforce correct answer
+  if (answer.value !== "yellow") {
     alert("That answer is incorrect. Please listen again and try once more.");
     return;
   }
@@ -585,10 +731,79 @@ document.getElementById("calibrationContinueBtn").onclick = async () => {
     }))
   });
 
+  // Go to task instructions (NOT trial yet)
+  document.getElementById("taskInstructions").classList.add("active");
+};
+
+
+/* ===============================
+   TASK INSTRUCTIONS → EXPERIMENT START
+================================ */
+
+document.getElementById("taskInstructionsContinueBtn").onclick = () => {
+  document.getElementById("taskInstructions").classList.remove("active");
+
   currentTrialIndex = 0;
   loadTrial(currentTrialIndex);
   interaction.classList.add("active");
 };
+
+
+/* ===============================
+   HUMAN-LIKENESS → SYSTEM IMPRESSIONS
+================================ */
+
+document.getElementById("humanLikertContinueBtn").onclick = async () => {
+  const value = Number(humanLikenessSlider.value);
+
+  await db.collection("users").doc(userId).set(
+    {
+      humanLikeness: {
+        value,
+        scaleMin: 0,
+        scaleMax: 7,
+        timestamp: new Date()
+      }
+    },
+    { merge: true }
+  );
+
+  humanLikert.classList.remove("active");
+  systemImpression.classList.add("active");
+};
+
+/* ===============================
+   SYSTEM IMPRESSIONS → ANTHROPOMORPHISM
+================================ */
+
+document.getElementById("systemImpressionContinueBtn").onclick = async () => {
+  const getVal = name =>
+    document.querySelector(`input[name="${name}"]:checked`)?.value || null;
+
+  const data = {
+    knowledgeable: getVal("knowledgeable"),
+    bestInterest: getVal("bestInterest"),
+    honest: getVal("honest"),
+    unbiased: getVal("unbiased"),
+    trustworthiness: getVal("trustworthiness"),
+    collaborator: getVal("collaborator"),
+    timestamp: new Date()
+  };
+
+  if (Object.values(data).some(v => v === null)) {
+    alert("Please answer all questions before continuing.");
+    return;
+  }
+
+  await db.collection("users").doc(userId).set(
+    { systemImpression: data },
+    { merge: true }
+  );
+
+  systemImpression.classList.remove("active");
+  postSurvey.classList.add("active");
+};
+
 
 
 /* ===============================
@@ -870,9 +1085,11 @@ document.getElementById("trialSurveyNextBtn").onclick = async () => {
     loadTrial(currentTrialIndex);
     interaction.classList.add("active");
   } else {
-    postSurvey.classList.add("active");
+    humanLikert.classList.add("active");
   }
 };
+
+
 
 /* ===============================
    FINAL ANTHROPOMORPHISM SURVEY
