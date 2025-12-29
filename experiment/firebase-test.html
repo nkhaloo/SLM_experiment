@@ -506,6 +506,105 @@
   <button id="submitBtn">Submit</button>
 </section>
 
+
+<!-- ===============================
+      DEMOGRAPHICS
+=============================== -->
+<section id="demographics">
+  <h2>Demographics</h2>
+
+  <div class="survey-block">
+    <h3>Please select your age range.</h3>
+    <label><input type="radio" name="age" value="18–24"> 18–24</label>
+    <label><input type="radio" name="age" value="25–34"> 25–34</label>
+    <label><input type="radio" name="age" value="35–44"> 35–44</label>
+    <label><input type="radio" name="age" value="45–54"> 45–54</label>
+    <label><input type="radio" name="age" value="55+"> 55+</label>
+  </div>
+
+  <div class="survey-block">
+    <h3>Which race/ethnicity do you most strongly identify with?</h3>
+    <label><input type="checkbox" name="ethnicity" value="Asian American"> Asian American</label>
+    <label><input type="checkbox" name="ethnicity" value="Black American"> Black American</label>
+    <label><input type="checkbox" name="ethnicity" value="Hispanic/Latino American"> Hispanic/Latino American</label>
+    <label><input type="checkbox" name="ethnicity" value="White American"> White American</label>
+    <label><input type="checkbox" name="ethnicity" value="Native American or other Indigenous culture"> Native American or other Indigenous culture</label>
+    <label><input type="checkbox" name="ethnicity" value="Other"> Other</label>
+  </div>
+
+  <div class="survey-block">
+    <h3>What regional dialect do you believe is closest to the way you speak?</h3>
+    <label><input type="radio" name="dialect" value="Midwestern U.S."> Midwestern U.S.</label>
+    <label><input type="radio" name="dialect" value="Northeastern U.S."> Northeastern U.S.</label>
+    <label><input type="radio" name="dialect" value="Northwestern U.S."> Northwestern U.S.</label>
+    <label><input type="radio" name="dialect" value="Southeastern U.S."> Southeastern U.S.</label>
+    <label><input type="radio" name="dialect" value="Southwestern U.S."> Southwestern U.S.</label>
+  </div>
+
+  <div class="survey-block">
+    <h3>What is/are your first language(s)?</h3>
+    <label><input type="radio" name="firstLang" value="English"> English</label>
+    <label><input type="radio" name="firstLang" value="English and another language"> English and another language</label>
+  </div>
+
+  <div class="survey-block">
+    <h3>What is your gender?</h3>
+    <label><input type="radio" name="gender" value="Male"> Male</label>
+    <label><input type="radio" name="gender" value="Female"> Female</label>
+    <label><input type="radio" name="gender" value="Non-binary"> Non-binary</label>
+    <label><input type="radio" name="gender" value="Other"> Other</label>
+  </div>
+
+  <div class="survey-block">
+    <h3>Do you have any speech or hearing disorders?</h3>
+    <label><input type="radio" name="speech" value="No"> No</label>
+    <label><input type="radio" name="speech" value="Yes"> Yes</label>
+    <label><input type="radio" name="speech" value="Prefer not to say"> Prefer not to say</label>
+  </div>
+
+  <div class="survey-block">
+    <h3>Have you been diagnosed as neurodivergent by a medical professional?</h3>
+    <label><input type="radio" name="neuro" value="No"> No</label>
+    <label><input type="radio" name="neuro" value="Yes"> Yes</label>
+    <label><input type="radio" name="neuro" value="Prefer not to say"> Prefer not to say</label>
+  </div>
+
+  <div class="survey-block">
+    <h3>Which technologies do you use regularly?</h3>
+    <label><input type="checkbox" name="tech" value="ChatGPT Voice Assistant"> ChatGPT Voice Assistant</label>
+    <label><input type="checkbox" name="tech" value="Google Gemini Voice"> Google Gemini Voice</label>
+    <label><input type="checkbox" name="tech" value="Amazon Alexa"> Amazon Alexa</label>
+    <label><input type="checkbox" name="tech" value="Apple Siri"> Apple Siri</label>
+    <label><input type="checkbox" name="tech" value="Microsoft Cortana"> Microsoft Cortana</label>
+    <label><input type="checkbox" name="tech" value="Voice-based navigation apps"> Voice-based navigation apps</label>
+    <label><input type="checkbox" name="tech" value="Other text-to-speech software"> Other text-to-speech software</label>
+    <label><input type="checkbox" name="tech" value="None of the above"> None of the above</label>
+  </div>
+
+  <div class="survey-block">
+    <h3>How often do you use AI-based software or AI voice assistants?</h3>
+    <label><input type="radio" name="aiUse" value="Never"> Never</label>
+    <label><input type="radio" name="aiUse" value="Less than once per week"> Less than once per week</label>
+    <label><input type="radio" name="aiUse" value="A few times per week"> A few times per week</label>
+    <label><input type="radio" name="aiUse" value="About once per day"> About once per day</label>
+    <label><input type="radio" name="aiUse" value="Several times per day"> Several times per day</label>
+  </div>
+
+  <div class="survey-block">
+    <h3>What is your attitude towards AI-based software or AI voice assistants?</h3>
+    <label><input type="radio" name="aiAttitude" value="1"> 1 Very negative</label>
+    <label><input type="radio" name="aiAttitude" value="2"> 2</label>
+    <label><input type="radio" name="aiAttitude" value="3"> 3</label>
+    <label><input type="radio" name="aiAttitude" value="4"> 4 Neutral</label>
+    <label><input type="radio" name="aiAttitude" value="5"> 5</label>
+    <label><input type="radio" name="aiAttitude" value="6"> 6</label>
+    <label><input type="radio" name="aiAttitude" value="7"> 7 Very positive</label>
+  </div>
+
+  <button id="demographicsSubmitBtn">Finish</button>
+</section>
+
+
 <!-- ===============================
       THANK YOU
 =============================== -->
@@ -754,47 +853,42 @@ document.getElementById("calibrationContinueBtn").onclick = async () => {
     return;
   }
 
-  document.getElementById("audioCalibration").classList.remove("active");
+document.getElementById("audioCalibration").classList.remove("active");
+document.getElementById("readAloud").classList.add("active");
 
-  condition = Math.random() < 0.5 ? "natural" : "robotic";
-  userId = "user_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+condition = Math.random() < 0.5 ? "natural" : "robotic";
+userId = "user_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
 
-  trials.sort(() => Math.random() - 0.5);
+trials.sort(() => Math.random() - 0.5);
 
-  await db.collection("users").doc(userId).set({
-    userId,
-    condition,
-    createdAt: new Date(),
-    audioCalibrationPassed: true,
-    trialOrder: trials.map(t => ({
-      domain: t.domain,
-      type: t.type
-    }))
-  });
-
-  // Go to task instructions (NOT trial yet)
-  document.getElementById("taskInstructions").classList.add("active");
+await db.collection("users").doc(userId).set({
+  userId,
+  condition,
+  createdAt: new Date(),
+  audioCalibrationPassed: true,
+  trialOrder: trials.map(t => ({
+    domain: t.domain,
+    type: t.type
+  }))
+});
 };
 
+
 /* ===============================
-   READ-ALOUD → EXPERIMENT START (trial 1)
+   READ-ALOUD → TASK INSTRUCTIONS
 ================================ */
 readAloudContinueBtn.onclick = () => {
   readAloud.classList.remove("active");
+  document.getElementById("taskInstructions").classList.add("active");
+};
+
+
+document.getElementById("taskInstructionsContinueBtn").onclick = () => {
+  document.getElementById("taskInstructions").classList.remove("active");
 
   currentTrialIndex = 0;
   loadTrial(currentTrialIndex);
   interaction.classList.add("active");
-};
-
-
-/* ===============================
-   TASK INSTRUCTIONS → Read-Aloud
-================================ */
-
-document.getElementById("taskInstructionsContinueBtn").onclick = () => {
-  document.getElementById("taskInstructions").classList.remove("active");
-  readAloud.classList.add("active");
 };
 
 
@@ -1258,10 +1352,56 @@ document.getElementById("submitBtn").onclick = async () => {
   );
 
   postSurvey.classList.remove("active");
+  document.getElementById("demographics").classList.add("active");
+};
+
+document.getElementById("demographicsSubmitBtn").onclick = async () => {
+
+  const getRadio = name =>
+    document.querySelector(`input[name="${name}"]:checked`)?.value || null;
+
+  const getCheckboxes = name =>
+    Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+      .map(cb => cb.value);
+
+  const demographicsData = {
+    age: getRadio("age"),
+    ethnicity: getCheckboxes("ethnicity"),
+    dialect: getRadio("dialect"),
+    firstLanguage: getRadio("firstLang"),
+    gender: getRadio("gender"),
+    speechDisorder: getRadio("speech"),
+    neurodivergent: getRadio("neuro"),
+    technologiesUsed: getCheckboxes("tech"),
+    aiUseFrequency: getRadio("aiUse"),
+    aiAttitude: getRadio("aiAttitude"),
+    timestamp: new Date()
+  };
+
+  if (
+    !demographicsData.age ||
+    !demographicsData.dialect ||
+    !demographicsData.firstLanguage ||
+    !demographicsData.gender ||
+    !demographicsData.speechDisorder ||
+    !demographicsData.neurodivergent ||
+    !demographicsData.aiUseFrequency ||
+    !demographicsData.aiAttitude
+  ) {
+    alert("Please answer all required demographic questions.");
+    return;
+  }
+
+  await db.collection("users").doc(userId).set(
+    { demographics: demographicsData },
+    { merge: true }
+  );
+
+  document.getElementById("demographics").classList.remove("active");
   document.getElementById("thanks").classList.add("active");
 };
 
-// add participant demographics 
+
 // add 2  attention checks after 5th and 15th trials 
 // fix how data is saved 
 
