@@ -260,6 +260,42 @@
 
 
 
+<!-- ===============================
+      READ ALOUD 
+=============================== -->
+<section id="readAloud">
+  <h2>Before We Begin</h2>
+
+  <p>
+    Before starting the task, please complete the short speaking exercise below.
+  </p>
+
+  <p><strong>
+    Important:
+  </strong></p>
+
+  <ul>
+    <li>Please press <strong>Record</strong> and read the passage aloud.</li>
+    <li>This recording will <strong>not</strong> receive a response.</li>
+    <li>The AI system will <strong>not</strong> see or respond to what you say.</li>
+    <li>This step is only to ensure your microphone is working properly.</li>
+  </ul>
+
+  <div class="trial-card" style="margin-top:1.5rem;">
+    <p style="font-size:0.95rem; line-height:1.4;">
+      <strong>The Rainbow Passage</strong><br /><br />
+      When the sunlight strikes raindrops in the air, they act like a prism and form a rainbow. The rainbow is a division of white light into many beautiful colors. These take the shape of a long round arch, with its path high above, and its two ends apparently beyond the horizon. There is, according to legend, a boiling pot of gold at one end. People look but no one ever finds it. When a man looks for something beyond his reach, his friends say he is looking for the pot of gold at the end of the rainbow.
+    </p>
+  </div>
+
+  <div style="margin-top:1.5rem;">
+    <button id="readAloudRecordBtn">Record</button>
+    <p id="readAloudStatus"></p>
+    <button id="readAloudContinueBtn" disabled>Continue</button>
+  </div>
+</section>
+
+
 
 <!-- ===============================
       PER-TRIAL SURVEY
@@ -652,8 +688,13 @@ const postSurvey = document.getElementById("postSurvey");
 const trialSurvey = document.getElementById("trialSurvey");
 const systemImpression = document.getElementById("systemImpression");
 const humanLikert = document.getElementById("humanLikert");
+const readAloud = document.getElementById("readAloud");
+const readAloudRecordBtn = document.getElementById("readAloudRecordBtn");
+const readAloudContinueBtn = document.getElementById("readAloudContinueBtn");
+const readAloudStatus = document.getElementById("readAloudStatus");
 const humanLikenessSlider = document.getElementById("humanLikenessSlider");
 const humanLikenessValue = document.getElementById("humanLikenessValue");
+
 
 
 
@@ -735,17 +776,25 @@ document.getElementById("calibrationContinueBtn").onclick = async () => {
   document.getElementById("taskInstructions").classList.add("active");
 };
 
-
 /* ===============================
-   TASK INSTRUCTIONS → EXPERIMENT START
+   READ-ALOUD → EXPERIMENT START (trial 1)
 ================================ */
-
-document.getElementById("taskInstructionsContinueBtn").onclick = () => {
-  document.getElementById("taskInstructions").classList.remove("active");
+readAloudContinueBtn.onclick = () => {
+  readAloud.classList.remove("active");
 
   currentTrialIndex = 0;
   loadTrial(currentTrialIndex);
   interaction.classList.add("active");
+};
+
+
+/* ===============================
+   TASK INSTRUCTIONS → Read-Aloud
+================================ */
+
+document.getElementById("taskInstructionsContinueBtn").onclick = () => {
+  document.getElementById("taskInstructions").classList.remove("active");
+  readAloud.classList.add("active");
 };
 
 
@@ -849,11 +898,89 @@ recordBtn.onclick = async () => {
     statusEl.innerHTML = "";
   } else {
     mediaRecorder.stop();
-    recordBtn.textContent = "Ask";
+    recordBtn.textContent = "Recorded";
     statusEl.innerHTML = `<div class="dots"><span></span><span></span><span></span></div>`;
     recordBtn.disabled = true;
   }
 };
+
+
+/* ===============================
+   READ-ALOUD RECORDING (NO AI)
+================================ */
+let readAloudRecorder;
+let readAloudChunks = [];
+let readAloudCompleted = false;
+
+readAloudRecordBtn.onclick = async () => {
+  // Prevent re-recording
+  if (readAloudCompleted) return;
+
+  if (!readAloudRecorder || readAloudRecorder.state === "inactive") {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // Let browser choose best supported format
+    readAloudRecorder = new MediaRecorder(stream);
+    readAloudChunks = [];
+
+    readAloudRecorder.ondataavailable = e => {
+      if (e.data.size > 0) readAloudChunks.push(e.data);
+    };
+
+    readAloudRecorder.onstop = async () => {
+      readAloudStatus.textContent = "Saving recording…";
+      readAloudRecordBtn.disabled = true;
+      readAloudRecordBtn.textContent = "Recorded";
+      readAloudCompleted = true;
+
+      // Stop mic cleanly
+      readAloudRecorder.stream.getTracks().forEach(t => t.stop());
+
+      try {
+        const mimeType = readAloudRecorder.mimeType || "audio/webm";
+        const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+        const ts = Date.now();
+
+        const blob = new Blob(readAloudChunks, { type: mimeType });
+
+        const storageRef = storage.ref(
+          `users/${userId}/passage_reading_${ts}.${ext}`
+        );
+
+        // Upload with correct metadata
+        await storageRef.put(blob, { contentType: mimeType });
+        const audioURL = await storageRef.getDownloadURL();
+
+        // Save ONLY the URL (as requested)
+        await db.collection("users").doc(userId).set(
+          {
+            passageReadingURL: audioURL
+          },
+          { merge: true }
+        );
+
+        readAloudStatus.textContent = "Recording saved.";
+        readAloudContinueBtn.disabled = false;
+
+      } catch (err) {
+        console.error("Passage recording save error:", err);
+        readAloudStatus.textContent =
+          "Error saving recording. Please refresh and try again.";
+      } finally {
+        readAloudChunks = [];
+      }
+    };
+
+    readAloudRecorder.start();
+    readAloudRecordBtn.textContent = "Stop";
+    readAloudStatus.textContent = "Recording… please read aloud.";
+
+  } else {
+    readAloudRecorder.stop();
+  }
+};
+
+
 
 /* ===============================
    HANDLE RECORDING STOP
