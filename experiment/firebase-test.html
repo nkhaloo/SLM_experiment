@@ -820,6 +820,7 @@ const trials = [
 let userId = null;
 let condition = null; // "natural" or "robotic"
 let currentTrialIndex = 0;
+let micStream = null;
 let pendingTurnData = null;
 
 const recordBtn = document.getElementById("recordBtn");
@@ -882,6 +883,12 @@ surveyBtn.onclick = () => {
 
 // Audio calibration → Task Instructions
 document.getElementById("calibrationContinueBtn").onclick = async () => {
+
+  // ✅ MIC REQUEST MUST BE FIRST — NO LOGIC BEFORE
+  if (!micStream) {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  }
+
   const answer = document.querySelector(
     'input[name="calibrationCheck"]:checked'
   );
@@ -891,31 +898,32 @@ document.getElementById("calibrationContinueBtn").onclick = async () => {
     return;
   }
 
-  // Enforce correct answer
   if (answer.value !== "yellow") {
     alert("That answer is incorrect. Please listen again and try once more.");
     return;
   }
 
-document.getElementById("audioCalibration").classList.remove("active");
-document.getElementById("readAloud").classList.add("active");
+  document.getElementById("audioCalibration").classList.remove("active");
+  document.getElementById("readAloud").classList.add("active");
 
-condition = Math.random() < 0.5 ? "natural" : "robotic";
-userId = "user_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+  condition = Math.random() < 0.5 ? "natural" : "robotic";
+  userId = "user_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
 
-trials.sort(() => Math.random() - 0.5);
+  trials.sort(() => Math.random() - 0.5);
 
-await db.collection("users").doc(userId).set({
-  userId,
-  condition,
-  createdAt: new Date(),
-  audioCalibrationPassed: true,
-  trialOrder: trials.map(t => ({
-    domain: t.domain,
-    type: t.type
-  }))
-});
+  await db.collection("users").doc(userId).set({
+    userId,
+    condition,
+    createdAt: new Date(),
+    audioCalibrationPassed: true,
+    trialOrder: trials.map(t => ({
+      domain: t.domain,
+      type: t.type
+    }))
+  });
 };
+
+
 
 /* ===============================
    DEMOGRAPHICS CONDITIONAL LOGIC
@@ -1054,8 +1062,13 @@ let mediaRecorder, chunks = [];
 
 recordBtn.onclick = async () => {
   if (!mediaRecorder || mediaRecorder.state === "inactive") {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
+
+    if (!micStream) {
+      alert("Microphone not initialized. Please refresh the page.");
+      return;
+    }
+
+    mediaRecorder = new MediaRecorder(micStream);
     chunks = [];
     mediaRecorder.ondataavailable = e => chunks.push(e.data);
     mediaRecorder.onstop = handleRecordingStop;
@@ -1080,14 +1093,11 @@ let readAloudChunks = [];
 let readAloudCompleted = false;
 
 readAloudRecordBtn.onclick = async () => {
-  // Prevent re-recording
   if (readAloudCompleted) return;
 
   if (!readAloudRecorder || readAloudRecorder.state === "inactive") {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    // Let browser choose best supported format
-    readAloudRecorder = new MediaRecorder(stream);
+    // ✅ REUSE EXISTING MIC STREAM
+    readAloudRecorder = new MediaRecorder(micStream);
     readAloudChunks = [];
 
     readAloudRecorder.ondataavailable = e => {
@@ -1100,9 +1110,6 @@ readAloudRecordBtn.onclick = async () => {
       readAloudRecordBtn.textContent = "Recorded";
       readAloudCompleted = true;
 
-      // Stop mic cleanly
-      readAloudRecorder.stream.getTracks().forEach(t => t.stop());
-
       try {
         const mimeType = readAloudRecorder.mimeType || "audio/webm";
         const ext = mimeType.includes("mp4") ? "mp4" : "webm";
@@ -1114,15 +1121,11 @@ readAloudRecordBtn.onclick = async () => {
           `users/${userId}/passage_reading_${ts}.${ext}`
         );
 
-        // Upload with correct metadata
         await storageRef.put(blob, { contentType: mimeType });
         const audioURL = await storageRef.getDownloadURL();
 
-        // Save ONLY the URL (as requested)
         await db.collection("users").doc(userId).set(
-          {
-            passageReadingURL: audioURL
-          },
+          { passageReadingURL: audioURL },
           { merge: true }
         );
 
@@ -1141,7 +1144,6 @@ readAloudRecordBtn.onclick = async () => {
     readAloudRecorder.start();
     readAloudRecordBtn.textContent = "Stop";
     readAloudStatus.textContent = "Recording… please read aloud.";
-
   } else {
     readAloudRecorder.stop();
   }
