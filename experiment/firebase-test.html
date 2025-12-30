@@ -105,6 +105,11 @@
       display: block;
       margin: 0.15rem 0;
     }
+    .survey-block label {
+  display: block;
+  margin: 0.25rem 0;
+}
+
   </style>
 </head>
 
@@ -545,7 +550,14 @@
     <h3>What is/are your first language(s)?</h3>
     <label><input type="radio" name="firstLang" value="English"> English</label>
     <label><input type="radio" name="firstLang" value="English and another language"> English and another language</label>
+
+    <div id="otherLangBox" style="display:none; margin-top:0.5rem;">
+      <p>Please enter the language(s) besides English:</p>
+      <textarea id="otherLangText"></textarea>
+    </div>
   </div>
+
+
 
   <div class="survey-block">
     <h3>What is your gender?</h3>
@@ -560,14 +572,28 @@
     <label><input type="radio" name="speech" value="No"> No</label>
     <label><input type="radio" name="speech" value="Yes"> Yes</label>
     <label><input type="radio" name="speech" value="Prefer not to say"> Prefer not to say</label>
+
+    <div id="speechDescBox" style="display:none; margin-top:0.5rem;">
+      <p>Please briefly describe the speech or hearing disorder:</p>
+      <textarea id="speechDescText"></textarea>
+    </div>
   </div>
+
+
 
   <div class="survey-block">
     <h3>Have you been diagnosed as neurodivergent by a medical professional?</h3>
     <label><input type="radio" name="neuro" value="No"> No</label>
     <label><input type="radio" name="neuro" value="Yes"> Yes</label>
     <label><input type="radio" name="neuro" value="Prefer not to say"> Prefer not to say</label>
+
+    <div id="neuroDescBox" style="display:none; margin-top:0.5rem;">
+      <p>Please briefly state the neurodivergence you were diagnosed with:</p>
+      <textarea id="neuroDescText"></textarea>
+    </div>
   </div>
+
+
 
   <div class="survey-block">
     <h3>Which technologies do you use regularly?</h3>
@@ -872,6 +898,35 @@ await db.collection("users").doc(userId).set({
   }))
 });
 };
+
+/* ===============================
+   DEMOGRAPHICS CONDITIONAL LOGIC
+================================ */
+
+// First language → show other language box
+document.querySelectorAll('input[name="firstLang"]').forEach(radio => {
+  radio.addEventListener("change", () => {
+    document.getElementById("otherLangBox").style.display =
+      radio.value === "English and another language" ? "block" : "none";
+  });
+});
+
+// Speech disorder → show description
+document.querySelectorAll('input[name="speech"]').forEach(radio => {
+  radio.addEventListener("change", () => {
+    document.getElementById("speechDescBox").style.display =
+      radio.value === "Yes" ? "block" : "none";
+  });
+});
+
+// Neurodivergence → show description
+document.querySelectorAll('input[name="neuro"]').forEach(radio => {
+  radio.addEventListener("change", () => {
+    document.getElementById("neuroDescBox").style.display =
+      radio.value === "Yes" ? "block" : "none";
+  });
+});
+
 
 
 /* ===============================
@@ -1351,6 +1406,7 @@ document.getElementById("submitBtn").onclick = async () => {
     { merge: true }
   );
 
+
   postSurvey.classList.remove("active");
   document.getElementById("demographics").classList.add("active");
 };
@@ -1364,33 +1420,77 @@ document.getElementById("demographicsSubmitBtn").onclick = async () => {
     Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
       .map(cb => cb.value);
 
-  const demographicsData = {
-    age: getRadio("age"),
-    ethnicity: getCheckboxes("ethnicity"),
-    dialect: getRadio("dialect"),
-    firstLanguage: getRadio("firstLang"),
-    gender: getRadio("gender"),
-    speechDisorder: getRadio("speech"),
-    neurodivergent: getRadio("neuro"),
-    technologiesUsed: getCheckboxes("tech"),
-    aiUseFrequency: getRadio("aiUse"),
-    aiAttitude: getRadio("aiAttitude"),
-    timestamp: new Date()
-  };
+      const demographicsData = {
+        age: getRadio("age"),
+        ethnicity: getCheckboxes("ethnicity"),
+        dialect: getRadio("dialect"),
+        firstLanguage: getRadio("firstLang"),
+        otherLanguages:
+          getRadio("firstLang") === "English and another language"
+            ? document.getElementById("otherLangText").value.trim()
+            : "",
 
-  if (
-    !demographicsData.age ||
-    !demographicsData.dialect ||
-    !demographicsData.firstLanguage ||
-    !demographicsData.gender ||
-    !demographicsData.speechDisorder ||
-    !demographicsData.neurodivergent ||
-    !demographicsData.aiUseFrequency ||
-    !demographicsData.aiAttitude
-  ) {
-    alert("Please answer all required demographic questions.");
-    return;
-  }
+        gender: getRadio("gender"),
+
+        speechDisorder: getRadio("speech"),
+        speechDescription:
+          getRadio("speech") === "Yes"
+            ? document.getElementById("speechDescText").value.trim()
+            : "",
+
+        neurodivergent: getRadio("neuro"),
+        neuroDescription:
+          getRadio("neuro") === "Yes"
+            ? document.getElementById("neuroDescText").value.trim()
+            : "",
+
+        technologiesUsed: getCheckboxes("tech"),
+        aiUseFrequency: getRadio("aiUse"),
+        aiAttitude: getRadio("aiAttitude"),
+
+        timestamp: new Date()
+      };
+
+
+      if (
+        !demographicsData.age ||
+        !demographicsData.dialect ||
+        !demographicsData.firstLanguage ||
+        !demographicsData.gender ||
+        !demographicsData.speechDisorder ||
+        !demographicsData.neurodivergent ||
+        !demographicsData.aiUseFrequency ||
+        !demographicsData.aiAttitude
+      ) {
+        alert("Please answer all required demographic questions.");
+        return;
+      }
+
+      // Require descriptions if Yes
+      if (
+        demographicsData.speechDisorder === "Yes" &&
+        !demographicsData.speechDescription
+      ) {
+        alert("Please describe your speech or hearing disorder.");
+        return;
+      }
+
+      if (
+        demographicsData.neurodivergent === "Yes" &&
+        !demographicsData.neuroDescription
+      ) {
+        alert("Please describe your neurodivergence.");
+        return;
+      }
+
+      if (
+        demographicsData.firstLanguage === "English and another language" &&
+        !demographicsData.otherLanguages
+      ) {
+        alert("Please specify your other language(s).");
+        return;
+      }
+
 
   await db.collection("users").doc(userId).set(
     { demographics: demographicsData },
