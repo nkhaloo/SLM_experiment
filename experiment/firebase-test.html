@@ -593,6 +593,15 @@
     </div>
   </div>
 
+  <div class="survey-block">
+    <h3>How often do you use AI-based software or AI voice assistants?</h3>
+    <label><input type="radio" name="aiUse" value="Never"> Never</label>
+    <label><input type="radio" name="aiUse" value="Less than once per week"> Less than once per week</label>
+    <label><input type="radio" name="aiUse" value="A few times per week"> A few times per week</label>
+    <label><input type="radio" name="aiUse" value="About once per day"> About once per day</label>
+    <label><input type="radio" name="aiUse" value="Several times per day"> Several times per day</label>
+  </div>
+
 
 
   <div class="survey-block">
@@ -608,23 +617,32 @@
   </div>
 
   <div class="survey-block">
-    <h3>How often do you use AI-based software or AI voice assistants?</h3>
-    <label><input type="radio" name="aiUse" value="Never"> Never</label>
-    <label><input type="radio" name="aiUse" value="Less than once per week"> Less than once per week</label>
-    <label><input type="radio" name="aiUse" value="A few times per week"> A few times per week</label>
-    <label><input type="radio" name="aiUse" value="About once per day"> About once per day</label>
-    <label><input type="radio" name="aiUse" value="Several times per day"> Several times per day</label>
-  </div>
-
-  <div class="survey-block">
     <h3>What is your attitude towards AI-based software or AI voice assistants?</h3>
-    <label><input type="radio" name="aiAttitude" value="1"> 1 Very negative</label>
-    <label><input type="radio" name="aiAttitude" value="2"> 2</label>
-    <label><input type="radio" name="aiAttitude" value="3"> 3</label>
-    <label><input type="radio" name="aiAttitude" value="4"> 4 Neutral</label>
-    <label><input type="radio" name="aiAttitude" value="5"> 5</label>
-    <label><input type="radio" name="aiAttitude" value="6"> 6</label>
-    <label><input type="radio" name="aiAttitude" value="7"> 7 Very positive</label>
+
+    <label>
+      <input type="radio" name="aiAttitude" value="Extremely negative">
+      Extremely negative
+    </label>
+
+    <label>
+      <input type="radio" name="aiAttitude" value="Negative">
+      Negative
+    </label>
+
+    <label>
+      <input type="radio" name="aiAttitude" value="Neutral">
+      Neutral
+    </label>
+
+    <label>
+      <input type="radio" name="aiAttitude" value="Positive">
+      Positive
+    </label>
+
+    <label>
+      <input type="radio" name="aiAttitude" value="Extremely positive">
+      Extremely positive
+    </label>
   </div>
 
   <button id="demographicsSubmitBtn">Finish</button>
@@ -1451,18 +1469,19 @@ document.getElementById("demographicsSubmitBtn").onclick = async () => {
         timestamp: new Date()
       };
 
-
       if (
         !demographicsData.age ||
+        demographicsData.ethnicity.length === 0 ||
         !demographicsData.dialect ||
         !demographicsData.firstLanguage ||
         !demographicsData.gender ||
         !demographicsData.speechDisorder ||
         !demographicsData.neurodivergent ||
+        demographicsData.technologiesUsed.length === 0 ||
         !demographicsData.aiUseFrequency ||
         !demographicsData.aiAttitude
       ) {
-        alert("Please answer all required demographic questions.");
+        alert("Please answer all demographic questions.");
         return;
       }
 
