@@ -906,8 +906,7 @@ document.getElementById("calibrationContinueBtn").onclick = async () => {
   document.getElementById("audioCalibration").classList.remove("active");
   document.getElementById("readAloud").classList.add("active");
 
-  //condition = Math.random() < 0.5 ? "natural" : "robotic";
-  condition = "robotic"
+  condition = Math.random() < 0.5 ? "natural" : "robotic";
   userId = "user_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
 
   trials.sort(() => Math.random() - 0.5);
@@ -1218,10 +1217,8 @@ async function handleRecordingStop() {
   }
 }
 
-
 /* ===============================
    ROBOTIC DSP EFFECT
-   MONOTONE PROSODY VERSION
 ================================ */
 async function applyRoboticEffect(url) {
   const response = await fetch(url);
@@ -1237,84 +1234,47 @@ async function applyRoboticEffect(url) {
     decoded.sampleRate
   );
 
-  /* ===============================
-     SOURCE (CONSTANT PITCH)
-  =============================== */
   const src = offline.createBufferSource();
   src.buffer = decoded;
 
-  // Constant pitch bias → flattens contour range
-  src.playbackRate.setValueAtTime(0.985, 0);
+  // Mild AM
+  const osc = offline.createOscillator();
+  osc.type = "sine";
+  osc.frequency.value = 110;
 
-  /* ===============================
-     VERY HEAVY COMPRESSION
-     (kills prominence cues)
-  =============================== */
-  const comp = offline.createDynamicsCompressor();
-  comp.threshold.value = -35;
-  comp.knee.value = 0;
-  comp.ratio.value = 40;
-  comp.attack.value = 0.003;
-  comp.release.value = 0.15;
+  const modGain = offline.createGain();
+  modGain.gain.value = 0.15;
 
-  /* ===============================
-     SPECTRAL FLATTENING
-     (remove formant contrast)
-  =============================== */
-  const hpf = offline.createBiquadFilter();
-  hpf.type = "highpass";
-  hpf.frequency.value = 200;
-  hpf.Q.value = 0.7;
+  osc.connect(modGain.gain);
+  src.connect(modGain);
 
-  const lpf = offline.createBiquadFilter();
-  lpf.type = "lowpass";
-  lpf.frequency.value = 1700;
-  lpf.Q.value = 0.7;
-
-  /* ===============================
-     OUTPUT GAIN
-  =============================== */
-  const gain = offline.createGain();
-  gain.gain.value = 0.95;
-
-  src
-    .connect(comp)
-    .connect(hpf)
-    .connect(lpf)
-    .connect(gain)
-    .connect(offline.destination);
-
-  /* ===============================
-     NOISE FLOOR
-     (TTS texture, masks micro-variation)
-  =============================== */
-  const noiseBuffer = offline.createBuffer(
-    1,
-    decoded.length,
-    decoded.sampleRate
-  );
+  // Light noise
+  const noiseBuffer = offline.createBuffer(1, decoded.length, decoded.sampleRate);
   const noiseData = noiseBuffer.getChannelData(0);
   for (let i = 0; i < noiseData.length; i++) {
-    noiseData[i] = (Math.random() - 0.5) * 0.0025;
+    noiseData[i] = (Math.random() - 0.5) * 0.02;
   }
 
   const noise = offline.createBufferSource();
   noise.buffer = noiseBuffer;
 
   const noiseGain = offline.createGain();
-  noiseGain.gain.value = 0.05;
+  noiseGain.gain.value = 0.01;
 
-  noise.connect(noiseGain).connect(offline.destination);
+  noise.connect(noiseGain);
 
+  const mix = offline.createGain();
+  modGain.connect(mix);
+  noiseGain.connect(mix);
+  mix.connect(offline.destination);
+
+  osc.start(0);
   src.start(0);
   noise.start(0);
 
   const rendered = await offline.startRendering();
   return audioBufferToWavURL(rendered);
 }
-
-
-
 
 /* ===============================
    WEBM → WAV HELPER
