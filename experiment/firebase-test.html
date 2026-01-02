@@ -37,7 +37,8 @@
     section.active { display: block; }
 
     #status { font-style: italic; min-height: 1.5rem; }
-    audio { margin-top: 1rem; width: 100%; pointer-events: none;}
+    audio { margin-top: 1rem; width: 100%; }
+    .locked-audio { pointer-events: none; }
 
     ul { text-align: left; margin: 1rem auto; max-width: 480px; }
 
@@ -184,6 +185,7 @@
       <p id="status"></p>
       <audio
         id="responseAudio"
+        class="locked-audio"
         controls
         controlsList="nodownload noplaybackrate"
         disableRemotePlayback
@@ -209,7 +211,7 @@
     Important! Please keep the level the same throughout the experiment.
   </strong></p>
 
-  <audio id="calibrationAudio" controls>
+  <audio id="calibrationAudio" controls preload="auto">
     <source src="attention_check/audio_check.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
@@ -917,8 +919,15 @@ envCheckbox.onchange = () => {
 // Environment → Audio Calibration
 envContinueBtn.onclick = () => {
   document.getElementById("environment").classList.remove("active");
-  document.getElementById("audioCalibration").classList.add("active");
+
+  const calibrationSection = document.getElementById("audioCalibration");
+  calibrationSection.classList.add("active");
+
+  // 🔧 FORCE audio to initialize after becoming visible
+  const calibrationAudio = document.getElementById("calibrationAudio");
+  calibrationAudio.load();
 };
+
 
 // After audio is heard → show per-trial survey
 surveyBtn.onclick = () => {
@@ -1570,6 +1579,15 @@ document.getElementById("demographicsSubmitBtn").onclick = async () => {
   document.getElementById("demographics").classList.remove("active");
   document.getElementById("thanks").classList.add("active");
 };
+
+const calibrationAudio = document.getElementById("calibrationAudio");
+
+calibrationAudio.addEventListener("error", () => {
+  alert(
+    "Audio calibration file failed to load.\n" +
+    "Please refresh the page or contact the researcher."
+  );
+});
 
 
 // add 2  attention checks after 5th and 15th trials 
