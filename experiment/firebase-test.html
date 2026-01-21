@@ -1522,6 +1522,21 @@ async function handleRecordingStop() {
     responseAudio.src = wavFirebaseURL;
     statusEl.innerHTML = "";
     
+    // Set up ended event listener to show continue button
+    responseAudio.addEventListener("ended", () => {
+      if (responseAudio.duration && responseAudio.duration > 0.5) {
+        hasPlayedResponse = true;
+
+        // lock audio at end
+        responseAudio.currentTime = responseAudio.duration;
+        responseAudio.pause();
+
+        // Hide visualization and show continue button
+        document.getElementById("audioVisualization").style.display = "none";
+        surveyBtn.style.display = "inline-block";
+      }
+    });
+    
     // Show audio visualization
     const audioVisualization = document.getElementById("audioVisualization");
     const waveform = document.getElementById("waveform");
