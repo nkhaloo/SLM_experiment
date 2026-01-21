@@ -15,7 +15,7 @@
   <style>
     body {
       font-family: system-ui, sans-serif;
-      max-width: 700px;
+      max-width: 1000px;
       margin: 2rem auto;
       text-align: center;
     }
@@ -32,6 +32,12 @@
     button:disabled {
       opacity: 0.6;
       cursor: default;
+    }
+    /* Center specific continue buttons under their content */
+    #micAcceptContinueBtn,
+    #micPreviewContinueBtn {
+      display: block;
+      margin: 1rem auto;
     }
     section { display: none; }
     section.active { display: block; }
@@ -92,11 +98,18 @@
 
     .survey-block {
       text-align: left;
-      margin: 1rem auto;
+      margin: 2rem auto;
       max-width: 520px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .impressions .survey-block {
+      max-width: 900px;
     }
     .survey-block h3 {
-      font-size: 1rem;
+      font-size: 0.8rem;
       margin-bottom: 0.3rem;
     }
     .survey-options {
@@ -105,6 +118,20 @@
     .survey-options label {
       display: block;
       margin: 0.15rem 0;
+    }
+    .survey-options.horizontal {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+    }
+    .survey-options.horizontal label {
+      display: inline-block;
+      margin: 0 1rem 0.15rem 0;
+      white-space: nowrap;
+    }
+    .impressions .survey-options.horizontal label {
+      font-size: 0.75rem;
+      margin: 0 0.5rem 0.15rem 0;
     }
     .survey-block label {
   display: block;
@@ -186,6 +213,7 @@
 
     <div style="text-align:center; margin-top:1rem;">
       <button id="recordBtn">Record</button>
+      <button id="skipTrialBtn" style="background: #dc2626; color: white;">Skip Trial</button>
       <p id="status"></p>
       <div id="audioVisualization" style="display: none; margin: 1rem 0;">
         <span style="font-size: 2rem;">🗣️</span>
@@ -220,7 +248,7 @@
     Important! Please keep the level the same throughout the experiment.
   </strong></p>
 
-  <audio id="calibrationAudio" controls preload="auto">
+  <audio id="calibrationAudio" controls controlsList="noplaybackrate" preload="auto">
     <source src="attention_check/audio_check.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
@@ -255,7 +283,7 @@
     You will see a dialog like this and have to accept it:
   </p>
 
-  <img src="microphone_accept/mic.png" alt="Microphone permission dialog" style="max-width: 100%; height: auto; border: 1px solid #ddd; margin: 1rem 0;" />
+  <img src="microphone_accept/mic.png" alt="Microphone permission dialog" style="max-width: 300px; height: auto; border: 1px solid #ddd; margin: 1rem 0;" />
 
   <button id="micPreviewContinueBtn">Continue</button>
 </section>
@@ -272,7 +300,9 @@
 
   <p id="micAcceptStatus"></p>
 
-  <button id="micAcceptContinueBtn">Continue</button>
+  <div style="text-align: center;">
+    <button id="micAcceptContinueBtn">Continue</button>
+  </div>
 </section>
 
 <!-- ===============================
@@ -292,7 +322,7 @@
   <div style="text-align:center; margin: 2rem 0;">
     <button id="micTestRecordBtn">Record</button>
     <p id="micTestStatus"></p>
-    <audio id="micTestPlayback" controls style="margin-top: 1rem;"></audio>
+    <audio id="micTestPlayback" controls controlsList="nodownload noplaybackrate" style="margin-top: 1rem;"></audio>
     <button id="micTestContinueBtn" style="display: none; margin-top: 1rem;">Continue</button>
   </div>
 </section>
@@ -443,45 +473,10 @@
 </section>
 
 <!-- ===============================
-      HUMAN-LIKENESS RATING
-=============================== -->
-<section id="humanLikert">
-  <h2>System Rating</h2>
-
-  <p>
-    How human-like was the machine you interacted with?
-  </p>
-
-  <div style="margin: 2rem auto; max-width: 500px;">
-    <input
-      type="range"
-      id="humanLikenessSlider"
-      min="0"
-      max="7"
-      step="0.01"
-      value="3.5"
-      style="width: 100%;"
-    />
-
-    <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
-      <span>Not at all human-like</span>
-      <span>Very human-like</span>
-    </div>
-
-    <p style="margin-top:1rem;">
-      Selected value: <strong><span id="humanLikenessValue">3.5</span></strong>
-    </p>
-  </div>
-
-  <button id="humanLikertContinueBtn">Continue</button>
-</section>
-
-
-<!-- ===============================
       SYSTEM IMPRESSIONS
 =============================== -->
-<section id="systemImpression">
-  <h2>System Impressions</h2>
+<section id="systemImpression" class="impressions">
+  <h2>System Impressions part 1</h2>
 
   <p>
     Now, we want you to answer some questions about the system that you just interacted with.
@@ -489,7 +484,7 @@
 
   <div class="survey-block">
     <h3>The system was knowledgeable about my questions.</h3>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="knowledgeable" value="1"> True</label>
       <label><input type="radio" name="knowledgeable" value="0"> False</label>
     </div>
@@ -497,7 +492,7 @@
 
   <div class="survey-block">
     <h3>The system's responses to my questions were in my best interest.</h3>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="bestInterest" value="1"> True</label>
       <label><input type="radio" name="bestInterest" value="0"> False</label>
     </div>
@@ -505,7 +500,7 @@
 
   <div class="survey-block">
     <h3>I believe the system's responses to me were honest.</h3>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="honest" value="1"> True</label>
       <label><input type="radio" name="honest" value="0"> False</label>
     </div>
@@ -513,7 +508,7 @@
 
   <div class="survey-block">
     <h3>I believe the system's responses to me were unbiased.</h3>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="unbiased" value="1"> True</label>
       <label><input type="radio" name="unbiased" value="0"> False</label>
     </div>
@@ -522,7 +517,7 @@
   <div class="survey-block">
     <h3>Please rate your impression of the system:</h3>
     <p><em>Untrustworthy ~ Trustworthy</em></p>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="trustworthiness" value="1"> Extremely untrustworthy</label>
       <label><input type="radio" name="trustworthiness" value="2"> Somewhat untrustworthy</label>
       <label><input type="radio" name="trustworthiness" value="3"> Neither untrustworthy nor trustworthy</label>
@@ -534,7 +529,7 @@
   <div class="survey-block">
     <h3>Please rate your impression of the system:</h3>
     <p><em>Tool ~ Collaborator</em></p>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="collaborator" value="1"> Extremely like a tool</label>
       <label><input type="radio" name="collaborator" value="2"> Somewhat like a tool</label>
       <label><input type="radio" name="collaborator" value="3"> Neither a tool nor a collaborator</label>
@@ -551,13 +546,13 @@
 <!-- ===============================
       FINAL POST-SURVEY (Anthropomorphism)
 =============================== -->
-<section id="postSurvey">
-  <h2>Final Questionnaire</h2>
+<section id="postSurvey" class="impressions">
+  <h2>System Impressions part 2</h2>
   <p>Please rate your impression of the system on the following items.</p>
 
   <div class="survey-block">
     <h3>1. Authenticity </h3>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="authenticity" value="1"> Completely fake</label>
       <label><input type="radio" name="authenticity" value="2"> Somewhat fake</label>
       <label><input type="radio" name="authenticity" value="3"> Neither fake nor natural</label>
@@ -568,7 +563,7 @@
 
   <div class="survey-block">
     <h3>2. Humanism </h3>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="humanism" value="1"> Completely machine-like</label>
       <label><input type="radio" name="humanism" value="2"> Somewhat machine-like</label>
       <label><input type="radio" name="humanism" value="3"> Neither</label>
@@ -579,7 +574,7 @@
 
   <div class="survey-block">
     <h3>3. Awareness </h3>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="awareness" value="1"> Completely unconscious</label>
       <label><input type="radio" name="awareness" value="2"> Somewhat unconscious</label>
       <label><input type="radio" name="awareness" value="3"> Neither</label>
@@ -590,7 +585,7 @@
 
   <div class="survey-block">
     <h3>4. Realism </h3>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="realism" value="1"> Completely artificial</label>
       <label><input type="radio" name="realism" value="2"> Somewhat artificial</label>
       <label><input type="radio" name="realism" value="3"> Neither</label>
@@ -601,7 +596,7 @@
 
   <div class="survey-block">
     <h3>5. Competence </h3>
-    <div class="survey-options">
+    <div class="survey-options horizontal">
       <label><input type="radio" name="competence" value="1"> Completely incompetent</label>
       <label><input type="radio" name="competence" value="2"> Somewhat incompetent</label>
       <label><input type="radio" name="competence" value="3"> Neither</label>
@@ -610,7 +605,7 @@
     </div>
   </div>
 
-  <button id="submitBtn">Submit</button>
+  <button id="submitBtn">Continue</button>
 </section>
 
 
@@ -618,7 +613,7 @@
       DEMOGRAPHICS
 =============================== -->
 <section id="demographics">
-  <h2>Demographics</h2>
+  <p>Now please answer these questions about yourself.</p>
 
   <div class="survey-block">
     <h3>Please select your age range.</h3>
@@ -926,6 +921,7 @@ let micStream = null;
 let pendingTurnData = null;
 
 const recordBtn = document.getElementById("recordBtn");
+const skipTrialBtn = document.getElementById("skipTrialBtn");
 const surveyBtn = document.getElementById("surveyBtn");
 const statusEl = document.getElementById("status");
 const responseAudio = document.getElementById("responseAudio");
@@ -1029,13 +1025,10 @@ const interaction = document.getElementById("interaction");
 const postSurvey = document.getElementById("postSurvey");
 const trialSurvey = document.getElementById("trialSurvey");
 const systemImpression = document.getElementById("systemImpression");
-const humanLikert = document.getElementById("humanLikert");
 const readAloud = document.getElementById("readAloud");
 const readAloudRecordBtn = document.getElementById("readAloudRecordBtn");
 const readAloudContinueBtn = document.getElementById("readAloudContinueBtn");
 const readAloudStatus = document.getElementById("readAloudStatus");
-const humanLikenessSlider = document.getElementById("humanLikenessSlider");
-const humanLikenessValue = document.getElementById("humanLikenessValue");
 
 
 
@@ -1043,10 +1036,6 @@ const humanLikenessValue = document.getElementById("humanLikenessValue");
 const trialCounterEl = document.getElementById("trialCounter");
 const trialContextEl = document.getElementById("trialContext");
 const trialQuestionEl = document.getElementById("trialQuestion");
-
-humanLikenessSlider.oninput = () => {
-  humanLikenessValue.textContent = humanLikenessSlider.value;
-};
 
 
 /* ===============================
@@ -1223,29 +1212,6 @@ document.getElementById("testContinueBtn").onclick = () => {
 
 
 /* ===============================
-   HUMAN-LIKENESS → SYSTEM IMPRESSIONS
-================================ */
-
-document.getElementById("humanLikertContinueBtn").onclick = async () => {
-  const value = Number(humanLikenessSlider.value);
-
-  await db.collection("users").doc(userId).set(
-    {
-      humanLikeness: {
-        value,
-        scaleMin: 0,
-        scaleMax: 7,
-        timestamp: new Date()
-      }
-    },
-    { merge: true }
-  );
-
-  humanLikert.classList.remove("active");
-  systemImpression.classList.add("active");
-};
-
-/* ===============================
    SYSTEM IMPRESSIONS → ANTHROPOMORPHISM
 ================================ */
 
@@ -1341,6 +1307,26 @@ recordBtn.onclick = async () => {
     recordBtn.textContent = "Recorded";
     statusEl.innerHTML = `<div class="dots"><span></span><span></span><span></span></div>`;
     recordBtn.disabled = true;
+  }
+};
+
+// Skip trial handler
+skipTrialBtn.onclick = () => {
+  currentTrialIndex++;
+  if (currentTrialIndex < trials.length) {
+    loadTrial(currentTrialIndex);
+    // Reset UI
+    recordBtn.textContent = "Record";
+    recordBtn.disabled = false;
+    statusEl.innerHTML = "";
+    responseAudio.src = "";
+    responseAudio.style.display = "none";
+    surveyBtn.style.display = "none";
+    document.getElementById("audioVisualization").style.display = "none";
+  } else {
+    // All trials skipped, go to system impressions
+    systemImpression.classList.add("active");
+    interaction.classList.remove("active");
   }
 };
 
@@ -1808,7 +1794,7 @@ document.getElementById("trialSurveyNextBtn").onclick = async () => {
     loadTrial(currentTrialIndex);
     interaction.classList.add("active");
   } else {
-    humanLikert.classList.add("active");
+    systemImpression.classList.add("active");
   }
 };
 
