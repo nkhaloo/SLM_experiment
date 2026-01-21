@@ -248,7 +248,7 @@
     Important! Please keep the level the same throughout the experiment.
   </strong></p>
 
-  <audio id="calibrationAudio" controls controlsList="noplaybackrate" preload="auto">
+  <audio id="calibrationAudio" controls controlsList="nodownload noplaybackrate" disableRemotePlayback preload="auto">
     <source src="attention_check/audio_check.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
@@ -1380,7 +1380,8 @@ micTestRecordBtn.onclick = async () => {
     micTestContinueBtn.style.display = "none";
   } else {
     micTestRecorder.stop();
-    micTestRecordBtn.textContent = "Record Again";
+    micTestRecordBtn.textContent = "Recorded";
+    micTestRecordBtn.disabled = true;
   }
 };
 
