@@ -150,14 +150,24 @@
   <h2>Welcome!</h2>
 
   <p>
-    In today’s study, you will interact with a chat system.
+    Welcome! You will need to complete the study within a single 30 minute sitting (we will be able to see from timestamps).
   </p>
 
   <p>
-    The system you will be interacting with for this experiment can answer questions about work, health, and general facts.
+    In total, you will complete 20 trials where you will read questions to a conversational AI system.
   </p>
-    For this study, you will need to be able to see the full screen and listen to audio.
-  </strong></p>
+
+  <p>
+    Before, you will do some practice recordings and calibrations before you start and do a practice trial.
+  </p>
+
+  <p>
+    After, you will answer questions about the system and basic questions about your demographics.
+  </p>
+
+  <p>
+    Still interested? If so, please continue to the next page to complete informed consent!
+  </p>
 
   <button id="welcomeContinueBtn">Continue</button>
 </section>
@@ -258,11 +268,11 @@
   </p>
 
   <div class="survey-block">
-    <h3>What color was mentioned in the recording?</h3>
+    <h3>What fruit was mentioned?</h3>
     <div class="survey-options">
-      <label><input type="radio" name="calibrationCheck" value="yellow"> Yellow</label>
-      <label><input type="radio" name="calibrationCheck" value="green"> Green</label>
-      <label><input type="radio" name="calibrationCheck" value="red"> Red</label>
+      <label><input type="radio" name="calibrationCheck" value="banana"> Banana</label>
+      <label><input type="radio" name="calibrationCheck" value="orange"> Orange</label>
+      <label><input type="radio" name="calibrationCheck" value="strawberry"> Strawberry</label>
     </div>
   </div>
 
@@ -316,7 +326,7 @@
   </p>
 
   <p><strong>
-    Click "Record" and say a few words, then click "Stop" to hear your recording played back.
+    Click "Record" and say a few words (e.g., "This is a test of the system" or "Testing 1 2 3"), then click "Stop" to hear your recording played back.
   </strong></p>
 
   <div style="text-align:center; margin: 2rem 0;">
@@ -334,11 +344,19 @@
   <h2>Instructions</h2>
 
   <p>
+    In this study, you will be interacting with a conversational AI system.
+  </p>
+
+  <p>
     The system can answer questions about work, health, and general facts.
   </p>
 
   <p>
-      On each trial, you will be presented with a question (e.g., “How far away is the moon?”) that you must verbally ask the system. You will click the 'Ask' button, ask the question, and press 'Stop' when done. The system will then provide a verbal response.
+    On each trial, you will be presented with a prewritten question (e.g., “How far away is the moon?”) that you must verbally ask the system. You will click the 'Ask' button, ask the question, and press 'Submit' when done. The system will then provide a verbal response.
+  </p>
+
+  <p>
+    You will start with one practice trial, then complete 20 trials in total after practice.
     </p>
   </p>
 
@@ -355,7 +373,11 @@
 
   <p><strong>There are no right or wrong answers.</strong></p>
 
-  <button id="taskInstructionsContinueBtn">Continue</button>
+  <p>
+    Please do not consult outside sources.
+  </p>
+
+  <button id="taskInstructionsContinueBtn">Click to try practice trial</button>
 </section>
 
 <!-- ===============================
@@ -392,7 +414,7 @@
         controlsList="nodownload noplaybackrate"
         disableRemotePlayback
       ></audio>
-      <button id="testContinueBtn" style="display:none;">Continue to Experiment</button>
+      <button id="testContinueBtn" style="display:none;">Click to start the experiment!</button>
     </div>
   </div>
 </section>
@@ -401,22 +423,11 @@
       READ ALOUD 
 =============================== -->
 <section id="readAloud">
-  <h2>Before We Begin</h2>
+  <h2>Reading Task</h2>
 
   <p>
-    Before starting the task, please complete the short speaking exercise below.
+    Please read the passage below aloud. Make sure to press "Record" before reading. Once you are done reading the passage, press "Submit" then hit "Next" to continue.
   </p>
-
-  <p><strong>
-    Important:
-  </strong></p>
-
-  <ul>
-    <li>Please press <strong>Record</strong> and read the passage aloud.</li>
-    <li>This recording will <strong>not</strong> receive a response.</li>
-    <li>The AI system will <strong>not</strong> see or respond to what you say.</li>
-    <li>This step is only to ensure your microphone is working properly.</li>
-  </ul>
 
   <div class="trial-card" style="margin-top:1.5rem;">
     <p style="font-size:0.95rem; line-height:1.4;">
@@ -428,7 +439,7 @@
   <div style="margin-top:1.5rem;">
     <button id="readAloudRecordBtn">Record</button>
     <p id="readAloudStatus"></p>
-    <button id="readAloudContinueBtn" disabled>Continue</button>
+    <button id="readAloudContinueBtn" disabled>Next</button>
   </div>
 </section>
 
@@ -616,31 +627,27 @@
   <p>Now please answer these questions about yourself.</p>
 
   <div class="survey-block">
-    <h3>Please select your age range.</h3>
-    <label><input type="radio" name="age" value="18–24"> 18–24</label>
-    <label><input type="radio" name="age" value="25–34"> 25–34</label>
-    <label><input type="radio" name="age" value="35–44"> 35–44</label>
-    <label><input type="radio" name="age" value="45–54"> 45–54</label>
-    <label><input type="radio" name="age" value="55+"> 55+</label>
+    <h3>What is your age?</h3>
+    <input type="number" name="age" min="18" placeholder="Enter your age" style="padding: 0.5rem; font-size: 1rem; width: 150px;">
   </div>
 
   <div class="survey-block">
-    <h3>Which race/ethnicity do you most strongly identify with?</h3>
+    <h3>How would you best describe your race and ethnicity?</h3>
     <label><input type="checkbox" name="ethnicity" value="Asian American"> Asian American</label>
     <label><input type="checkbox" name="ethnicity" value="Black American"> Black American</label>
     <label><input type="checkbox" name="ethnicity" value="Hispanic/Latino American"> Hispanic/Latino American</label>
     <label><input type="checkbox" name="ethnicity" value="White American"> White American</label>
     <label><input type="checkbox" name="ethnicity" value="Native American or other Indigenous culture"> Native American or other Indigenous culture</label>
     <label><input type="checkbox" name="ethnicity" value="Other"> Other</label>
+    <div id="ethnicityOtherBox" style="display:none; margin-top:0.5rem;">
+      <p>Please describe your race and ethnicity:</p>
+      <input type="text" id="ethnicityOtherText" placeholder="Enter your race/ethnicity" style="padding: 0.5rem; font-size: 1rem; width: 100%;">
+    </div>
   </div>
 
   <div class="survey-block">
-    <h3>What regional dialect do you believe is closest to the way you speak?</h3>
-    <label><input type="radio" name="dialect" value="Midwestern U.S."> Midwestern U.S.</label>
-    <label><input type="radio" name="dialect" value="Northeastern U.S."> Northeastern U.S.</label>
-    <label><input type="radio" name="dialect" value="Northwestern U.S."> Northwestern U.S.</label>
-    <label><input type="radio" name="dialect" value="Southeastern U.S."> Southeastern U.S.</label>
-    <label><input type="radio" name="dialect" value="Southwestern U.S."> Southwestern U.S.</label>
+    <h3>Where did you grow up (up to age 18)? Please provide the city and state.</h3>
+    <input type="text" name="regionDialect" placeholder="e.g., Boston, MA" style="padding: 0.5rem; font-size: 1rem; width: 100%;">
   </div>
 
   <div class="survey-block">
@@ -658,10 +665,7 @@
 
   <div class="survey-block">
     <h3>What is your gender?</h3>
-    <label><input type="radio" name="gender" value="Male"> Male</label>
-    <label><input type="radio" name="gender" value="Female"> Female</label>
-    <label><input type="radio" name="gender" value="Non-binary"> Non-binary</label>
-    <label><input type="radio" name="gender" value="Other"> Other</label>
+    <input type="text" name="gender" placeholder="Enter your gender" style="padding: 0.5rem; font-size: 1rem; width: 100%;">
   </div>
 
   <div class="survey-block">
@@ -742,9 +746,27 @@
     </label>
   </div>
 
-  <button id="demographicsSubmitBtn">Finish</button>
+  <button id="demographicsSubmitBtn">Continue</button>
 </section>
 
+<!-- ===============================
+      OPEN-ENDED FEEDBACK
+=============================== -->
+<section id="openEndedFeedback">
+  <h2>Final Feedback</h2>
+
+  <div class="survey-block">
+    <h3>1. Please describe your overall experience with the AI system. What did you like or dislike about interacting with it?</h3>
+    <textarea id="openEnded1" placeholder="Your response..." style="padding: 0.5rem; font-size: 1rem; width: 100%; height: 120px; font-family: system-ui, sans-serif;"></textarea>
+  </div>
+
+  <div class="survey-block">
+    <h3>2. Is there anything else you would like us to know about your experience or any feedback for the researchers?</h3>
+    <textarea id="openEnded2" placeholder="Your response..." style="padding: 0.5rem; font-size: 1rem; width: 100%; height: 120px; font-family: system-ui, sans-serif;"></textarea>
+  </div>
+
+  <button id="openEndedSubmitBtn">Finish</button>
+</section>
 
 <!-- ===============================
       THANK YOU
@@ -1087,7 +1109,7 @@ document.getElementById("calibrationContinueBtn").onclick = async () => {
     return;
   }
 
-  if (answer.value !== "yellow") {
+  if (answer.value !== "banana") {
     alert("That answer is incorrect. Please listen again and try once more.");
     return;
   }
@@ -1150,6 +1172,15 @@ document.getElementById("micTestContinueBtn").onclick = () => {
 /* ===============================
    DEMOGRAPHICS CONDITIONAL LOGIC
 ================================ */
+
+// Ethnicity → show other ethnicity box
+document.querySelectorAll('input[name="ethnicity"]').forEach(checkbox => {
+  checkbox.addEventListener("change", () => {
+    const otherChecked = document.querySelector('input[name="ethnicity"][value="Other"]:checked');
+    document.getElementById("ethnicityOtherBox").style.display =
+      otherChecked ? "block" : "none";
+  });
+});
 
 // First language → show other language box
 document.querySelectorAll('input[name="firstLang"]').forEach(radio => {
@@ -1300,7 +1331,7 @@ recordBtn.onclick = async () => {
     mediaRecorder.onstop = handleRecordingStop;
     mediaRecorder.start();
 
-    recordBtn.textContent = "Stop";
+    recordBtn.textContent = "Submit";
     statusEl.innerHTML = "Recording...";
   } else {
     mediaRecorder.stop();
@@ -1345,7 +1376,7 @@ testRecordBtn.onclick = async () => {
     testMediaRecorder.onstop = handleTestRecordingStop;
     testMediaRecorder.start();
 
-    testRecordBtn.textContent = "Stop";
+    testRecordBtn.textContent = "Submit";
     testStatusEl.innerHTML = "Recording...";
   } else {
     testMediaRecorder.stop();
@@ -1850,21 +1881,25 @@ document.getElementById("demographicsSubmitBtn").onclick = async () => {
   const getRadio = name =>
     document.querySelector(`input[name="${name}"]:checked`)?.value || null;
 
+  const getInputValue = name =>
+    document.querySelector(`input[name="${name}"]`)?.value?.trim() || "";
+
   const getCheckboxes = name =>
     Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
       .map(cb => cb.value);
 
       const demographicsData = {
-        age: getRadio("age"),
+        age: getInputValue("age"),
         ethnicity: getCheckboxes("ethnicity"),
-        dialect: getRadio("dialect"),
+        ethnicityOther: document.getElementById("ethnicityOtherText")?.value?.trim() || "",
+        grewUpLocation: getInputValue("regionDialect"),
         firstLanguage: getRadio("firstLang"),
         otherLanguages:
           getRadio("firstLang") === "English and another language"
             ? document.getElementById("otherLangText").value.trim()
             : "",
 
-        gender: getRadio("gender"),
+        gender: getInputValue("gender"),
 
         speechDisorder: getRadio("speech"),
         speechDescription:
@@ -1888,7 +1923,7 @@ document.getElementById("demographicsSubmitBtn").onclick = async () => {
       if (
         !demographicsData.age ||
         demographicsData.ethnicity.length === 0 ||
-        !demographicsData.dialect ||
+        !demographicsData.grewUpLocation ||
         !demographicsData.firstLanguage ||
         !demographicsData.gender ||
         !demographicsData.speechDisorder ||
@@ -1898,6 +1933,22 @@ document.getElementById("demographicsSubmitBtn").onclick = async () => {
         !demographicsData.aiAttitude
       ) {
         alert("Please answer all demographic questions.");
+        return;
+      }
+
+      // Require ethnicity description if Other is selected
+      if (
+        demographicsData.ethnicity.includes("Other") &&
+        !demographicsData.ethnicityOther
+      ) {
+        alert("Please describe your race and ethnicity.");
+        return;
+      }
+
+      // Basic age validation
+      const ageNumber = Number(demographicsData.age);
+      if (!Number.isFinite(ageNumber) || ageNumber < 18 || ageNumber > 120) {
+        alert("Please enter a valid age.");
         return;
       }
 
@@ -1933,6 +1984,31 @@ document.getElementById("demographicsSubmitBtn").onclick = async () => {
   );
 
   document.getElementById("demographics").classList.remove("active");
+  document.getElementById("openEndedFeedback").classList.add("active");
+};
+
+// Open-ended feedback submit
+document.getElementById("openEndedSubmitBtn").onclick = async () => {
+  const feedback1 = document.getElementById("openEnded1").value.trim();
+  const feedback2 = document.getElementById("openEnded2").value.trim();
+
+  if (!feedback1 || !feedback2) {
+    alert("Please answer both open-ended questions.");
+    return;
+  }
+
+  const openEndedData = {
+    systemExperience: feedback1,
+    additionalFeedback: feedback2,
+    timestamp: new Date()
+  };
+
+  await db.collection("users").doc(userId).set(
+    { openEndedFeedback: openEndedData },
+    { merge: true }
+  );
+
+  document.getElementById("openEndedFeedback").classList.remove("active");
   document.getElementById("thanks").classList.add("active");
 };
 
