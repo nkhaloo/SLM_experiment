@@ -174,7 +174,35 @@
 
 
 <!-- ===============================
-      ENVIRONMENT SETUP (Slide 2)
+      CONSENT FORM (Slide 2)
+=============================== -->
+<section id="consent">
+  <h2>Informed Consent</h2>
+
+  <p>
+    To consent to this study, please click the link below and read through the consent form.
+    Then come back to this screen and click <strong>"I agree to consent"</strong>, then hit <strong>"Continue"</strong>.
+  </p>
+
+  <p>
+    <a href="https://raw.githubusercontent.com/nkhaloo/SLM_experiment/main/consent.pdf" target="_blank" rel="noopener noreferrer">
+      View Consent Form
+    </a>
+  </p>
+
+  <div style="margin: 1.5rem 0;">
+    <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; cursor: pointer;">
+      <input type="checkbox" id="consentCheckbox" />
+      I agree to consent
+    </label>
+  </div>
+
+  <button id="consentContinueBtn" disabled>Continue</button>
+</section>
+
+
+<!-- ===============================
+      ENVIRONMENT SETUP (Slide 3)
 =============================== -->
 <section id="environment">
   <h2>Before We Begin</h2>
@@ -1064,9 +1092,22 @@ const trialQuestionEl = document.getElementById("trialQuestion");
    SCREEN LOGIC
 ================================ */
 
-// Welcome → Environment
+// Welcome → Consent
 document.getElementById("welcomeContinueBtn").onclick = () => {
   document.getElementById("welcome").classList.remove("active");
+  document.getElementById("consent").classList.add("active");
+};
+
+// Consent checkbox enables Continue
+const consentCheckbox = document.getElementById("consentCheckbox");
+const consentContinueBtn = document.getElementById("consentContinueBtn");
+consentCheckbox.onchange = () => {
+  consentContinueBtn.disabled = !consentCheckbox.checked;
+};
+
+// Consent → Environment
+consentContinueBtn.onclick = () => {
+  document.getElementById("consent").classList.remove("active");
   document.getElementById("environment").classList.add("active");
 };
 
