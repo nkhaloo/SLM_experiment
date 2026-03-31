@@ -833,8 +833,10 @@ const storage = firebase.storage();
    Trial definitions (20 trials)
 ================================ */
 
+const GITHUB_BASE = "https://raw.githubusercontent.com/nkhaloo/SLM_experiment/main/experiment/prerecorded";
+
 // Pre-recorded audio file for the practice trial
-const PRACTICE_AUDIO_FILE = "prerecorded/practice.mp3";
+const PRACTICE_AUDIO_FILE = `${GITHUB_BASE}/practice.mp3`;
 
 const trials = [
   // Medication
@@ -843,28 +845,28 @@ const trials = [
     context: "You want to learn information about a new medication the doctor mentioned.",
     type: "Fact",
     question: "What’s the dosage for the medication, Levaquin?",
-    audioFile: "prerecorded/medication_fact.mp3"
+    audioFile: `${GITHUB_BASE}/medication_fact.mp3`
   },
   {
     domain: "Medication",
     context: "You want to learn information about a new medication the doctor mentioned.",
     type: "Risk",
     question: "Does the medication Corgard have any dangerous side effects?",
-    audioFile: "prerecorded/medication_risk.mp3"
+    audioFile: `${GITHUB_BASE}/medication_risk.mp3`
   },
   {
     domain: "Medication",
     context: "You want to learn information about a new medication the doctor mentioned.",
     type: "Advice",
     question: "Should I take the medication Topamax if I’m already taking Tylenol?",
-    audioFile: "prerecorded/medication_advice.mp3"
+    audioFile: `${GITHUB_BASE}/medication_advice.mp3`
   },
   {
     domain: "Medication",
     context: "You want to learn information about a new medication the doctor mentioned.",
     type: "Estimation",
     question: "What’s the cost for the medication, Relenza?",
-    audioFile: "prerecorded/medication_estimation.mp3"
+    audioFile: `${GITHUB_BASE}/medication_estimation.mp3`
   },
 
   // Health
@@ -873,28 +875,28 @@ const trials = [
     context: "You’re interested in learning more about common health disorders.",
     type: "Fact",
     question: "What are symptoms of stroke?",
-    audioFile: "prerecorded/health_fact.mp3"
+    audioFile: `${GITHUB_BASE}/health_fact.mp3`
   },
   {
     domain: "Health",
     context: "You’re interested in learning more about common health disorders.",
     type: "Risk",
     question: "Is cancer hereditary?",
-    audioFile: "prerecorded/health_risk.mp3"
+    audioFile: `${GITHUB_BASE}/health_risk.mp3`
   },
   {
     domain: "Health",
     context: "You’re interested in learning more about common health disorders.",
     type: "Advice",
     question: "What should I do to reduce my risk of diabetes?",
-    audioFile: "prerecorded/health_advice.mp3"
+    audioFile: `${GITHUB_BASE}/health_advice.mp3`
   },
   {
     domain: "Health",
     context: "You’re interested in learning more about common health disorders.",
     type: "Estimation",
     question: "If my dad has heart disease, what are the chances I’ll get it too?",
-    audioFile: "prerecorded/health_estimation.mp3"
+    audioFile: `${GITHUB_BASE}/health_estimation.mp3`
   },
 
   // Career
@@ -903,28 +905,28 @@ const trials = [
     context: "You’re interested in a career change.",
     type: "Fact",
     question: "How commonly do people switch jobs into healthcare?",
-    audioFile: "prerecorded/career_fact.mp3"
+    audioFile: `${GITHUB_BASE}/career_fact.mp3`
   },
   {
     domain: "Career",
     context: "You’re interested in a career change.",
     type: "Risk",
     question: "What are the job-related health risks in finance?",
-    audioFile: "prerecorded/career_risk.mp3"
+    audioFile: `${GITHUB_BASE}/career_risk.mp3`
   },
   {
     domain: "Career",
     context: "You’re interested in a career change.",
     type: "Advice",
     question: "Would I earn enough as an educational administrator?",
-    audioFile: "prerecorded/career_advice.mp3"
+    audioFile: `${GITHUB_BASE}/career_advice.mp3`
   },
   {
     domain: "Career",
     context: "You’re interested in a career change.",
     type: "Estimation",
     question: "How many years of training would I need to do to get into computer science?",
-    audioFile: "prerecorded/career_estimation.mp3"
+    audioFile: `${GITHUB_BASE}/career_estimation.mp3`
   },
 
   // Travel
@@ -933,28 +935,28 @@ const trials = [
     context: "You’re interested in learning more about the world.",
     type: "Fact",
     question: "Where is the world’s tallest tree?",
-    audioFile: "prerecorded/travel_fact.mp3"
+    audioFile: `${GITHUB_BASE}/travel_fact.mp3`
   },
   {
     domain: "Travel",
     context: "You’re interested in learning more about the world.",
     type: "Risk",
     question: "What are the risks in going in a cave?",
-    audioFile: "prerecorded/travel_risk.mp3"
+    audioFile: `${GITHUB_BASE}/travel_risk.mp3`
   },
   {
     domain: "Travel",
     context: "You’re interested in learning more about the world.",
     type: "Advice",
     question: "Should I visit the world’s tallest volcano on a vacation?",
-    audioFile: "prerecorded/travel_advice.mp3"
+    audioFile: `${GITHUB_BASE}/travel_advice.mp3`
   },
   {
     domain: "Travel",
     context: "You’re interested in learning more about the world.",
     type: "Estimation",
     question: "How long would it take to reach the top of the world’s tallest mountain?",
-    audioFile: "prerecorded/travel_estimation.mp3"
+    audioFile: `${GITHUB_BASE}/travel_estimation.mp3`
   },
 
   // Cooking
@@ -963,28 +965,28 @@ const trials = [
     context: "You’re interested in trying a new recipe.",
     type: "Fact",
     question: "What temperature do I need to cook chicken to?",
-    audioFile: "prerecorded/cooking_fact.mp3"
+    audioFile: `${GITHUB_BASE}/cooking_fact.mp3`
   },
   {
     domain: "Cooking",
     context: "You’re interested in trying a new recipe.",
     type: "Risk",
     question: "Can I drink milk that’s been expired for 2 days?",
-    audioFile: "prerecorded/cooking_risk.mp3"
+    audioFile: `${GITHUB_BASE}/cooking_risk.mp3`
   },
   {
     domain: "Cooking",
     context: "You’re interested in trying a new recipe.",
     type: "Advice",
     question: "If I have an allergy to peanuts, should I eat peanut oil?",
-    audioFile: "prerecorded/cooking_advice.mp3"
+    audioFile: `${GITHUB_BASE}/cooking_advice.mp3`
   },
   {
     domain: "Cooking",
     context: "You’re interested in trying a new recipe.",
     type: "Estimation",
     question: "How much is a dash of salt?",
-    audioFile: "prerecorded/cooking_estimation.mp3"
+    audioFile: `${GITHUB_BASE}/cooking_estimation.mp3`
   }
 ];
 
