@@ -254,7 +254,6 @@
 
     <div style="text-align:center; margin-top:1rem;">
       <button id="recordBtn">Record</button>
-      <button id="skipTrialBtn" style="background: #dc2626; color: white;">Skip Trial</button>
       <p id="status"></p>
       <div id="audioVisualization" style="display: none; margin: 1rem 0;">
         <span style="font-size: 2rem;">🗣️</span>
@@ -1000,7 +999,6 @@ let micStream = null;
 let pendingTurnData = null;
 
 const recordBtn = document.getElementById("recordBtn");
-const skipTrialBtn = document.getElementById("skipTrialBtn");
 const surveyBtn = document.getElementById("surveyBtn");
 const statusEl = document.getElementById("status");
 const responseAudio = document.getElementById("responseAudio");
@@ -1416,26 +1414,6 @@ recordBtn.onclick = async () => {
     recordBtn.textContent = "Recorded";
     statusEl.innerHTML = `<div class="dots"><span></span><span></span><span></span></div>`;
     recordBtn.disabled = true;
-  }
-};
-
-// Skip trial handler
-skipTrialBtn.onclick = () => {
-  currentTrialIndex++;
-  if (currentTrialIndex < trials.length) {
-    loadTrial(currentTrialIndex);
-    // Reset UI
-    recordBtn.textContent = "Record";
-    recordBtn.disabled = false;
-    statusEl.innerHTML = "";
-    responseAudio.src = "";
-    responseAudio.style.display = "none";
-    surveyBtn.style.display = "none";
-    document.getElementById("audioVisualization").style.display = "none";
-  } else {
-    // All trials skipped, go to system impressions
-    systemImpression.classList.add("active");
-    interaction.classList.remove("active");
   }
 };
 
