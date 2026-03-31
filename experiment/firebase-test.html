@@ -185,16 +185,19 @@
   </p>
 
   <p>
-    <a href="https://raw.githubusercontent.com/nkhaloo/SLM_experiment/main/consent.pdf" target="_blank" rel="noopener noreferrer">
+    <a id="consentLink" href="https://raw.githubusercontent.com/nkhaloo/SLM_experiment/main/consent.pdf" target="_blank" rel="noopener noreferrer">
       View Consent Form
     </a>
   </p>
 
   <div style="margin: 1.5rem 0;">
     <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; cursor: pointer;">
-      <input type="checkbox" id="consentCheckbox" />
+      <input type="checkbox" id="consentCheckbox" disabled />
       I agree to consent
     </label>
+    <p id="consentHint" style="font-size: 0.85rem; color: #888; margin: 0.4rem 0 0 0;">
+      Please open the consent form above before agreeing.
+    </p>
   </div>
 
   <button id="consentContinueBtn" disabled>Continue</button>
@@ -829,31 +832,39 @@ const storage = firebase.storage();
 /* ===============================
    Trial definitions (20 trials)
 ================================ */
+
+// Pre-recorded audio file for the practice trial
+const PRACTICE_AUDIO_FILE = "prerecorded/practice.mp3";
+
 const trials = [
   // Medication
   {
     domain: "Medication",
     context: "You want to learn information about a new medication the doctor mentioned.",
     type: "Fact",
-    question: "What’s the dosage for the medication, Levaquin?"
+    question: "What’s the dosage for the medication, Levaquin?",
+    audioFile: "prerecorded/medication_fact.mp3"
   },
   {
     domain: "Medication",
     context: "You want to learn information about a new medication the doctor mentioned.",
     type: "Risk",
-    question: "Does the medication Corgard have any dangerous side effects?"
+    question: "Does the medication Corgard have any dangerous side effects?",
+    audioFile: "prerecorded/medication_risk.mp3"
   },
   {
     domain: "Medication",
     context: "You want to learn information about a new medication the doctor mentioned.",
     type: "Advice",
-    question: "Should I take the medication Topamax if I’m already taking Tylenol?"
+    question: "Should I take the medication Topamax if I’m already taking Tylenol?",
+    audioFile: "prerecorded/medication_advice.mp3"
   },
   {
     domain: "Medication",
     context: "You want to learn information about a new medication the doctor mentioned.",
     type: "Estimation",
-    question: "What’s the cost for the medication, Relenza?"
+    question: "What’s the cost for the medication, Relenza?",
+    audioFile: "prerecorded/medication_estimation.mp3"
   },
 
   // Health
@@ -861,25 +872,29 @@ const trials = [
     domain: "Health",
     context: "You’re interested in learning more about common health disorders.",
     type: "Fact",
-    question: "What are symptoms of stroke?"
+    question: "What are symptoms of stroke?",
+    audioFile: "prerecorded/health_fact.mp3"
   },
   {
     domain: "Health",
     context: "You’re interested in learning more about common health disorders.",
     type: "Risk",
-    question: "Is cancer hereditary?"
+    question: "Is cancer hereditary?",
+    audioFile: "prerecorded/health_risk.mp3"
   },
   {
     domain: "Health",
     context: "You’re interested in learning more about common health disorders.",
     type: "Advice",
-    question: "What should I do to reduce my risk of diabetes?"
+    question: "What should I do to reduce my risk of diabetes?",
+    audioFile: "prerecorded/health_advice.mp3"
   },
   {
     domain: "Health",
     context: "You’re interested in learning more about common health disorders.",
     type: "Estimation",
-    question: "If my dad has heart disease, what are the chances I’ll get it too?"
+    question: "If my dad has heart disease, what are the chances I’ll get it too?",
+    audioFile: "prerecorded/health_estimation.mp3"
   },
 
   // Career
@@ -887,25 +902,29 @@ const trials = [
     domain: "Career",
     context: "You’re interested in a career change.",
     type: "Fact",
-    question: "How commonly do people switch jobs into healthcare?"
+    question: "How commonly do people switch jobs into healthcare?",
+    audioFile: "prerecorded/career_fact.mp3"
   },
   {
     domain: "Career",
     context: "You’re interested in a career change.",
     type: "Risk",
-    question: "What are the job-related health risks in finance?"
+    question: "What are the job-related health risks in finance?",
+    audioFile: "prerecorded/career_risk.mp3"
   },
   {
     domain: "Career",
     context: "You’re interested in a career change.",
     type: "Advice",
-    question: "Would I earn enough as an educational administrator?"
+    question: "Would I earn enough as an educational administrator?",
+    audioFile: "prerecorded/career_advice.mp3"
   },
   {
     domain: "Career",
     context: "You’re interested in a career change.",
     type: "Estimation",
-    question: "How many years of training would I need to do to get into computer science?"
+    question: "How many years of training would I need to do to get into computer science?",
+    audioFile: "prerecorded/career_estimation.mp3"
   },
 
   // Travel
@@ -913,25 +932,29 @@ const trials = [
     domain: "Travel",
     context: "You’re interested in learning more about the world.",
     type: "Fact",
-    question: "Where is the world’s tallest tree?"
+    question: "Where is the world’s tallest tree?",
+    audioFile: "prerecorded/travel_fact.mp3"
   },
   {
     domain: "Travel",
     context: "You’re interested in learning more about the world.",
     type: "Risk",
-    question: "What are the risks in going in a cave?"
+    question: "What are the risks in going in a cave?",
+    audioFile: "prerecorded/travel_risk.mp3"
   },
   {
     domain: "Travel",
     context: "You’re interested in learning more about the world.",
     type: "Advice",
-    question: "Should I visit the world’s tallest volcano on a vacation?"
+    question: "Should I visit the world’s tallest volcano on a vacation?",
+    audioFile: "prerecorded/travel_advice.mp3"
   },
   {
     domain: "Travel",
     context: "You’re interested in learning more about the world.",
     type: "Estimation",
-    question: "How long would it take to reach the top of the world’s tallest mountain?"
+    question: "How long would it take to reach the top of the world’s tallest mountain?",
+    audioFile: "prerecorded/travel_estimation.mp3"
   },
 
   // Cooking
@@ -939,25 +962,29 @@ const trials = [
     domain: "Cooking",
     context: "You’re interested in trying a new recipe.",
     type: "Fact",
-    question: "What temperature do I need to cook chicken to?"
+    question: "What temperature do I need to cook chicken to?",
+    audioFile: "prerecorded/cooking_fact.mp3"
   },
   {
     domain: "Cooking",
     context: "You’re interested in trying a new recipe.",
     type: "Risk",
-    question: "Can I drink milk that’s been expired for 2 days?"
+    question: "Can I drink milk that’s been expired for 2 days?",
+    audioFile: "prerecorded/cooking_risk.mp3"
   },
   {
     domain: "Cooking",
     context: "You’re interested in trying a new recipe.",
     type: "Advice",
-    question: "If I have an allergy to peanuts, should I eat peanut oil?"
+    question: "If I have an allergy to peanuts, should I eat peanut oil?",
+    audioFile: "prerecorded/cooking_advice.mp3"
   },
   {
     domain: "Cooking",
     context: "You’re interested in trying a new recipe.",
     type: "Estimation",
-    question: "How much is a dash of salt?"
+    question: "How much is a dash of salt?",
+    audioFile: "prerecorded/cooking_estimation.mp3"
   }
 ];
 
@@ -1098,9 +1125,17 @@ document.getElementById("welcomeContinueBtn").onclick = () => {
   document.getElementById("consent").classList.add("active");
 };
 
-// Consent checkbox enables Continue
+// Consent: unlock checkbox only after link is clicked
+const consentLink = document.getElementById("consentLink");
 const consentCheckbox = document.getElementById("consentCheckbox");
 const consentContinueBtn = document.getElementById("consentContinueBtn");
+const consentHint = document.getElementById("consentHint");
+
+consentLink.onclick = () => {
+  consentCheckbox.disabled = false;
+  consentHint.style.display = "none";
+};
+
 consentCheckbox.onchange = () => {
   consentContinueBtn.disabled = !consentCheckbox.checked;
 };
@@ -1540,22 +1575,8 @@ async function handleRecordingStop() {
     await userRef.put(userBlob);
     const userAudioURL = await userRef.getDownloadURL();
 
-    // Call backend to get model reply (.webm)
-    const response = await fetch("https://callopenai-ks3vpjhzoq-uc.a.run.app", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ audio: userAudioURL, userId })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      statusEl.textContent = "⚠️ Error: " + data.error;
-      recordBtn.disabled = false;
-      return;
-    }
-
-    // Convert model .webm → WAV
-    let wavLocalURL = await audioWebmToWavURL(data.audio);
+    // Load pre-recorded response audio
+    let wavLocalURL = await audioToWavURL(t.audioFile);
 
     // Apply robotic DSP ONLY if needed
     if (condition === "robotic") {
@@ -1574,7 +1595,7 @@ async function handleRecordingStop() {
     pendingTurnData = {
       userAudioURL,
       replyAudioURL: wavFirebaseURL,
-      modelText: data.text || ""
+      modelText: ""
     };
 
     // Play WAV (forced, single playback)
@@ -1640,22 +1661,8 @@ async function handleTestRecordingStop() {
     await testUserRef.put(testUserBlob);
     const testUserAudioURL = await testUserRef.getDownloadURL();
 
-    // Call backend to get model reply (.webm)
-    const response = await fetch("https://callopenai-ks3vpjhzoq-uc.a.run.app", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ audio: testUserAudioURL, userId })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      testStatusEl.textContent = "⚠️ Error: " + data.error;
-      testRecordBtn.disabled = false;
-      return;
-    }
-
-    // Convert model .webm → WAV
-    let testWavLocalURL = await audioWebmToWavURL(data.audio);
+    // Load pre-recorded practice response audio
+    let testWavLocalURL = await audioToWavURL(PRACTICE_AUDIO_FILE);
 
     // Apply robotic DSP ONLY if needed
     if (condition === "robotic") {
@@ -1669,6 +1676,15 @@ async function handleTestRecordingStop() {
     );
     await testReplyRef.put(testWavBlob, { contentType: "audio/wav" });
     const testWavFirebaseURL = await testReplyRef.getDownloadURL();
+
+    // Save practice trial URLs to Firestore
+    await db.collection("users").doc(userId).set(
+      {
+        practiceParticipantRecordingURL: testUserAudioURL,
+        practiceModelResponseURL: testWavFirebaseURL
+      },
+      { merge: true }
+    );
 
     // Play WAV (forced, single playback)
     testResponseAudio.src = testWavFirebaseURL;
@@ -1763,10 +1779,10 @@ async function applyRoboticEffect(url) {
 }
 
 /* ===============================
-   WEBM → WAV HELPER
+   AUDIO → WAV HELPER
 ================================ */
-async function audioWebmToWavURL(webmUrl) {
-  const response = await fetch(webmUrl);
+async function audioToWavURL(audioUrl) {
+  const response = await fetch(audioUrl);
   const arrayBuffer = await response.arrayBuffer();
 
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
