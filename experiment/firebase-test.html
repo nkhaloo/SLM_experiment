@@ -1212,7 +1212,7 @@ document.getElementById("micAcceptContinueBtn").onclick = async () => {
     statusEl.textContent = "Microphone access granted.";
 
     // Initialize user data here
-    condition = Math.random() < 0.5 ? "natural" : "robotic";
+    condition = "robotic";
     userId = "user_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
 
     trials.sort(() => Math.random() - 0.5);
