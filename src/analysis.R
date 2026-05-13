@@ -16,10 +16,16 @@ df <- read_csv(
     trial = as.integer(trial),
     voice_condition = factor(voice_condition),
     domain = factor(domain)
-  )
+  ) |>
+  filter(!is.na(domain), !is.na(accuracy), !is.na(reliance), !is.na(validation))
 
-contrasts(df$voice_condition) <- contr.sum(2)
-contrasts(df$domain)          <- contr.sum(nlevels(df$domain))
+vc_cm <- contr.sum(2)
+colnames(vc_cm) <- levels(df$voice_condition)[1]
+contrasts(df$voice_condition) <- vc_cm
+
+dom_cm <- contr.sum(nlevels(df$domain))
+colnames(dom_cm) <- levels(df$domain)[-nlevels(df$domain)]
+contrasts(df$domain) <- dom_cm
 
 # anthropomorphism
 anth_summary <- df |>
