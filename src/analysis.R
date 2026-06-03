@@ -8,32 +8,36 @@ df <- read_csv(
   "/Users/noahkhaloo/Desktop/SLM_experiment/experiment_results/participants_results_filtered.csv"
 ) %>%
   pivot_longer(
-    cols = matches("^trial_\\d+_"),
-    names_to = c("trial", ".value"),
-    names_pattern = "trial_(\\d+)_(.*)"
+    cols         = matches("^trial_[0-9]+_"),
+    names_to     = c("trial", ".value"),
+    names_pattern = "trial_([0-9]+)_(.*)"
   ) |>
   mutate(
-    trial = as.integer(trial),
+    trial           = as.integer(trial),
     voice_condition = factor(voice_condition),
-    domain = factor(domain)
+    domain          = factor(domain,
+                             levels = c("Career", "Cooking", "Health", "Medication", "Travel"))
   ) |>
   filter(!is.na(domain), !is.na(accuracy), !is.na(reliance), !is.na(validation))
 
+# Sum coding: voice_condition
 vc_cm <- contr.sum(2)
 colnames(vc_cm) <- levels(df$voice_condition)[1]
 contrasts(df$voice_condition) <- vc_cm
 
+# Sum coding: domain (Travel is last = implicit reference)
 dom_cm <- contr.sum(nlevels(df$domain))
 colnames(dom_cm) <- levels(df$domain)[-nlevels(df$domain)]
 contrasts(df$domain) <- dom_cm
 
-# anthropomorphism
-anth_summary <- df |>
-  distinct(user_id, voice_condition, anth_total_score) |>
+# ── Anthropomorphism ───────────────────────────────────────────────────────────
+anth_df <- df |> distinct(user_id, voice_condition, anth_total_score)
+
+anth_summary <- anth_df |>
   group_by(voice_condition) |>
   summarise(
     mean = mean(anth_total_score, na.rm = TRUE),
-    se = sd(anth_total_score, na.rm = TRUE) / sqrt(n()),
+    se   = sd(anth_total_score,   na.rm = TRUE) / sqrt(n()),
     .groups = "drop"
   )
 
@@ -45,49 +49,63 @@ ggplot(anth_summary, aes(x = voice_condition, y = mean, fill = voice_condition))
   theme_minimal() +
   theme(
     legend.position = "none",
-    axis.line = element_line(color = "black"),
-    axis.text = element_text(size = 14, face = "bold"),
+    axis.line  = element_line(color = "black"),
+    axis.text  = element_text(size = 14, face = "bold"),
     axis.title = element_text(size = 16, face = "bold")
   )
 ggsave(file.path(figures_dir, "anthropomorphism_by_condition.png"), width = 6, height = 10)
 
-anth_model <- lm(anth_total_score ~ voice_condition, data = df)
-summary(anth_model)
+anth_model <- lm(anth_total_score ~ voice_condition, data = anth_df)
+cat("\n=== ANTHROPOMORPHISM ===\n")
+print(summary(anth_model))
 
-# trust
+# ── Trust components ───────────────────────────────────────────────────────────
 trust_df <- df |>
   distinct(user_id, voice_condition,
            si_knowledgeable, si_best_interest, si_honest, si_unbiased,
            si_trustworthiness, si_collaborator) |>
-  mutate(trust_total = si_knowledgeable + si_best_interest +
-           si_honest + si_unbiased + si_trustworthiness + si_collaborator)
-
-trust_summary <- trust_df |>
-  group_by(voice_condition) |>
-  summarise(
-    mean = mean(trust_total, na.rm = TRUE),
-    se = sd(trust_total, na.rm = TRUE) / sqrt(n()),
-    .groups = "drop"
+  mutate(
+    emotional_trust = si_knowledgeable + si_best_interest + si_honest + si_unbiased,
+    overall_trust   = si_trustworthiness,
+    collaborator    = si_collaborator
   )
 
-ggplot(trust_summary, aes(x = voice_condition, y = mean, fill = voice_condition)) +
-  geom_col() +
-  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.2) +
-  labs(x = "Condition", y = "Trust Total Score") +
-  scale_y_continuous(limits = c(0, 14), expand = expansion(mult = c(0, 0))) +
-  theme_minimal() +
-  theme(
-    legend.position = "none",
-    axis.line = element_line(color = "black"),
-    axis.text = element_text(size = 14, face = "bold"),
-    axis.title = element_text(size = 16, face = "bold")
-  )
-ggsave(file.path(figures_dir, "trust_by_condition.png"), width = 6, height = 10)
+plot_trust <- function(var, y_label, file_name, y_max) {
+  summ <- trust_df |>
+    group_by(voice_condition) |>
+    summarise(
+      mean = mean(.data[[var]], na.rm = TRUE),
+      se   = sd(.data[[var]],   na.rm = TRUE) / sqrt(n()),
+      .groups = "drop"
+    )
+  ggplot(summ, aes(x = voice_condition, y = mean, fill = voice_condition)) +
+    geom_col() +
+    geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.2) +
+    labs(x = "Condition", y = y_label) +
+    scale_y_continuous(limits = c(0, y_max), expand = expansion(mult = c(0, 0))) +
+    theme_minimal() +
+    theme(
+      legend.position = "none",
+      axis.line  = element_line(color = "black"),
+      axis.text  = element_text(size = 14, face = "bold"),
+      axis.title = element_text(size = 16, face = "bold")
+    )
+  ggsave(file.path(figures_dir, file_name), width = 6, height = 10)
+}
 
-trust_model <- lm(trust_total ~ voice_condition, data = trust_df)
-summary(trust_model)
+plot_trust("emotional_trust", "Emotional Trust",   "emotional_trust_by_condition.png", 4)
+plot_trust("overall_trust",   "Overall Trust",     "overall_trust_by_condition.png",    5)
+plot_trust("collaborator",    "Collaborator Trust", "collaborator_by_condition.png",     5)
 
-# Experimental trials: accuracy, error risk, likelihood to validate
+emotional_trust_model <- lm(emotional_trust ~ voice_condition, data = trust_df)
+overall_trust_model   <- lm(overall_trust   ~ voice_condition, data = trust_df)
+collaborator_model    <- lm(collaborator    ~ voice_condition, data = trust_df)
+
+cat("\n=== EMOTIONAL TRUST ===\n");  print(summary(emotional_trust_model))
+cat("\n=== OVERALL TRUST ===\n");    print(summary(overall_trust_model))
+cat("\n=== COLLABORATOR TRUST ===\n"); print(summary(collaborator_model))
+
+# ── Trial figures (unchanged) ──────────────────────────────────────────────────
 trial_cond_summary <- df |>
   group_by(voice_condition) |>
   summarise(
@@ -119,11 +137,10 @@ plot_by_condition <- function(outcome, y_label, file_name, y_max) {
   ggsave(file.path(figures_dir, file_name), width = 6, height = 10)
 }
 
-plot_by_condition("accuracy",   "Accuracy",             "accuracy_by_condition.png",   4)
-plot_by_condition("reliance",   "Error Risk",            "reliance_by_condition.png",   4)
-plot_by_condition("validation", "Likelihood to Validate", "validation_by_condition.png", 2)
+plot_by_condition("accuracy",   "Accuracy",               "accuracy_by_condition.png",   4)
+plot_by_condition("reliance",   "Error Risk",              "reliance_by_condition.png",   4)
+plot_by_condition("validation", "Likelihood to Validate",  "validation_by_condition.png", 2)
 
-# Domain x condition plots
 domain_cond_summary <- df |>
   group_by(voice_condition, domain) |>
   summarise(
@@ -158,35 +175,19 @@ plot_by_domain <- function(outcome, y_label, y_max, file_name) {
   ggsave(file.path(figures_dir, file_name), width = 12, height = 5)
 }
 
-plot_by_domain("accuracy",   "Accuracy",             4, "accuracy_by_domain.png")
-plot_by_domain("reliance",   "Error Risk",            4, "reliance_by_domain.png")
-plot_by_domain("validation", "Likelihood to Validate", 2, "validation_by_domain.png")
+plot_by_domain("accuracy",   "Accuracy",               4, "accuracy_by_domain.png")
+plot_by_domain("reliance",   "Error Risk",              4, "reliance_by_domain.png")
+plot_by_domain("validation", "Likelihood to Validate",  2, "validation_by_domain.png")
 
-# Mixed models: additive vs condition*domain interaction
-model_formulas <- list(
-  "additive"   = "~ voice_condition + domain + (1|user_id)",
-  "vc*domain"  = "~ voice_condition * domain + (1|user_id)"
-)
-
-fit_models <- function(outcome) {
-  formulas <- lapply(model_formulas, function(f) as.formula(paste(outcome, f)))
-  models   <- lapply(formulas, function(f) lmer(f, data = df, REML = FALSE))
-
-  aic_table <- data.frame(
-    model = names(models),
-    AIC   = sapply(models, AIC),
-    BIC   = sapply(models, BIC)
-  ) |> arrange(AIC)
-
-  cat("\n===", toupper(outcome), ": model comparison (ranked by AIC) ===\n")
-  print(aic_table)
-
-  best_name <- aic_table$model[1]
-  winner <- models[[best_name]]
-  cat("\n===", toupper(outcome), ": winning model (", best_name, ") ===\n")
-  print(summary(winner))
+# ── Per-trial mixed models ─────────────────────────────────────────────────────
+fit_trial_model <- function(outcome) {
+  f <- as.formula(paste(outcome, "~ voice_condition * domain + trial + (1 | user_id)"))
+  m <- lmer(f, data = df, REML = FALSE)
+  cat("\n===", toupper(outcome), "===\n")
+  print(summary(m))
+  m
 }
 
-fit_models("accuracy")
-fit_models("reliance")
-fit_models("validation")
+accuracy_model   <- fit_trial_model("accuracy")
+reliance_model   <- fit_trial_model("reliance")
+validation_model <- fit_trial_model("validation")
