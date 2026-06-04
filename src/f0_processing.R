@@ -25,7 +25,7 @@ df <- raw |>
 df <- df |>
   mutate(across(all_of(f0_cols), ~ 12 * log2(.x)))
 
-# ── Gender-based min-max normalization ───────────────────────────────────────
+# ── Gender-based Z-score normalization ───────────────────────────────────────
 # Load gender from participant metadata; user number = row order in CSV.
 participant_meta <- read_csv(
   "experiment_results/participants_results_filtered.csv",
@@ -107,6 +107,62 @@ df_long <- df_filtered |>
 # ── Save ──────────────────────────────────────────────────────────────────────
 write_csv(df_long, "audio/acoustic_output/trials_f0_semitones_long.csv")
 
+# ── Participant-level mean F0: between-subjects condition test ────────────────
+# Design is between-subjects; participant is the proper unit of analysis for
+# testing whether conditions differ in mean F0 level.
+pp_means <- df_long |>
+  group_by(participant, TTS_condition) |>
+  summarise(mean_f0 = mean(f0_st, na.rm = TRUE), .groups = "drop")
+
+cat("\nParticipant-level mean F0 per condition:\n")
+pp_means |>
+  group_by(TTS_condition) |>
+  summarise(grand_mean = mean(mean_f0), sd = sd(mean_f0), n = n()) |>
+  print()
+
+pp_nat <- pp_means |> filter(TTS_condition == "natural") |> pull(mean_f0)
+pp_rob <- pp_means |> filter(TTS_condition == "robotic") |> pull(mean_f0)
+cat("\nWelch t-test (robotic vs natural, participant-level means):\n")
+print(t.test(pp_rob, pp_nat))
+
+# ── Participant-level F0 variability ──────────────────────────────────────────
+# SD of F0 across all trials × intervals per participant (one value each)
+pp_sd <- df_long |>
+  group_by(participant, TTS_condition) |>
+  summarise(f0_sd = sd(f0_st, na.rm = TRUE), .groups = "drop")
+
+cat("\nParticipant-level F0 SD per condition:\n")
+pp_sd |>
+  group_by(TTS_condition) |>
+  summarise(mean_sd = mean(f0_sd), sd_sd = sd(f0_sd), n = n()) |>
+  print()
+
+sd_nat <- pp_sd |> filter(TTS_condition == "natural") |> pull(f0_sd)
+sd_rob <- pp_sd |> filter(TTS_condition == "robotic") |> pull(f0_sd)
+cat("\nWelch t-test (robotic vs natural, participant-level F0 SD):\n")
+print(t.test(sd_rob, sd_nat))
+
+pp_sd_lm <- pp_sd |>
+  mutate(TTS_condition = factor(TTS_condition, levels = c("natural", "robotic")))
+contrasts(pp_sd_lm$TTS_condition) <- c(-0.5, 0.5)
+
+lm_f0sd <- lm(f0_sd ~ TTS_condition, data = pp_sd_lm)
+cat("\n── F0 SD ~ TTS condition (participant-level) ──\n")
+print(summary(lm_f0sd))
+
+p_f0_sd <- ggplot(pp_sd, aes(x = TTS_condition, y = f0_sd, fill = TTS_condition)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA, width = 0.5) +
+  geom_jitter(width = 0.1, size = 1.5, alpha = 0.6) +
+  scale_fill_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
+  labs(
+    x = "TTS condition",
+    y = "F0 SD (semitones, Z-scored)",
+  ) +
+  labs(fill = "TTS condition") +
+  theme_minimal()
+
+ggsave("figures/f0_sd_by_condition.png", p_f0_sd, width = 5, height = 4, dpi = 150)
+
 # ── Fit GAM ───────────────────────────────────────────────────────────────────
 df_gam <- df_long |>
   mutate(
@@ -127,9 +183,7 @@ m1 <- bam(
     s(time, k = 10) +
     s(time, by = TTS_condition, k = 10) +
     s(trial, by = TTS_condition, k = 10) +
-    s(participant, bs = "re") +
-    s(trial_fac,   bs = "re") +
-    s(time, participant, bs = "fs", m = 1, k = 8),
+    s(trial_fac, bs = "re"),
   data     = df_gam,
   method   = "fREML",
   discrete = TRUE
@@ -142,7 +196,7 @@ saveRDS(m1, "models/gam_f0.rds")
 conditions <- c("natural", "robotic")
 time_seq   <- seq(-7, 7, length.out = 200)
 
-excl <- c("s(participant)", "s(trial_fac)", "s(time,participant)")
+excl <- c("s(trial_fac)")
 
 gam_predict <- function(nd) {
   p <- predict(m1, newdata = nd, exclude = excl, type = "response", se.fit = TRUE)
@@ -209,6 +263,66 @@ p_trial <- ggplot(
 
 ggsave("figures/gam_f0_contour.png", p_contour, width = 7, height = 4, dpi = 150)
 ggsave("figures/gam_f0_trial_trend.png", p_trial,   width = 7, height = 4, dpi = 150)
+
+# ── Raw F0 contours (observed means across intervals) ─────────────────────────
+raw_f0_summary <- df_long |>
+  group_by(TTS_condition, time) |>
+  summarise(
+    mean_f0 = mean(f0_st, na.rm = TRUE),
+    se_f0   = sd(f0_st, na.rm = TRUE) / sqrt(sum(!is.na(f0_st))),
+    .groups = "drop"
+  )
+
+p_raw_contour <- ggplot(
+  raw_f0_summary,
+  aes(x = time, y = mean_f0, color = TTS_condition, fill = TTS_condition)
+) +
+  geom_ribbon(aes(ymin = mean_f0 - 1.96 * se_f0, ymax = mean_f0 + 1.96 * se_f0),
+              alpha = 0.2, color = NA) +
+  geom_line(linewidth = 1) +
+  scale_color_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
+  scale_fill_manual(values  = c(natural = "#2196F3", robotic = "#F44336")) +
+  labs(
+    x = "Normalized Time (centered)",
+    y = "F0 (semitones, Z-scored)",
+    color = "TTS condition", fill = "TTS condition"
+  ) +
+  theme_minimal()
+
+ggsave("figures/raw_f0_contour.png", p_raw_contour, width = 7, height = 4, dpi = 150)
+
+# ── Participant-averaged F0 contour (between-subjects unit of analysis) ────────
+# Step 1: average each participant's F0 across all trials, per time point
+pp_contour <- df_long |>
+  group_by(participant, TTS_condition, time) |>
+  summarise(mean_f0 = mean(f0_st, na.rm = TRUE), .groups = "drop")
+
+# Step 2: average participant means per condition, SE across participants
+pp_contour_summary <- pp_contour |>
+  group_by(TTS_condition, time) |>
+  summarise(
+    grand_mean = mean(mean_f0, na.rm = TRUE),
+    se         = sd(mean_f0, na.rm = TRUE) / sqrt(n()),
+    .groups    = "drop"
+  )
+
+p_pp_contour <- ggplot(
+  pp_contour_summary,
+  aes(x = time, y = grand_mean, color = TTS_condition, fill = TTS_condition)
+) +
+  geom_ribbon(aes(ymin = grand_mean - 1.96 * se, ymax = grand_mean + 1.96 * se),
+              alpha = 0.2, color = NA) +
+  geom_line(linewidth = 1) +
+  scale_color_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
+  scale_fill_manual(values  = c(natural = "#2196F3", robotic = "#F44336")) +
+  labs(
+    x = "Normalized Time (centered)",
+    y = "F0 (semitones, Z-scored)",
+    color = "TTS condition", fill = "TTS condition"
+  ) +
+  theme_minimal()
+
+ggsave("figures/participant_avg_f0_contour.png", p_pp_contour, width = 7, height = 4, dpi = 150)
 
 # ── Speaking rate & intensity ─────────────────────────────────────────────────
 library(lme4)
