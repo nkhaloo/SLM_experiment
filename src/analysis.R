@@ -45,6 +45,7 @@ ggplot(anth_summary, aes(x = voice_condition, y = mean, fill = voice_condition))
   geom_col() +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.2) +
   labs(x = "Condition", y = "Anthropomorphism Total Score") +
+  scale_fill_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
   scale_y_continuous(limits = c(0, 25), expand = expansion(mult = c(0, 0))) +
   theme_minimal() +
   theme(
@@ -82,6 +83,7 @@ plot_trust <- function(var, y_label, file_name, y_max) {
     geom_col() +
     geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.2) +
     labs(x = "Condition", y = y_label) +
+    scale_fill_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
     scale_y_continuous(limits = c(0, y_max), expand = expansion(mult = c(0, 0))) +
     theme_minimal() +
     theme(
@@ -125,6 +127,7 @@ plot_by_condition <- function(outcome, y_label, file_name, y_max) {
     geom_col() +
     geom_errorbar(aes(ymin = .data[[mean_col]] - .data[[se_col]],
                       ymax = .data[[mean_col]] + .data[[se_col]]), width = 0.2) +
+    scale_fill_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
     scale_y_continuous(limits = c(0, y_max), expand = expansion(mult = c(0, 0))) +
     labs(x = "Condition", y = y_label) +
     theme_minimal() +
@@ -161,6 +164,7 @@ plot_by_domain <- function(outcome, y_label, y_max, file_name) {
     geom_errorbar(aes(ymin = .data[[mean_col]] - .data[[se_col]],
                       ymax = .data[[mean_col]] + .data[[se_col]]), width = 0.2) +
     facet_wrap(~domain, nrow = 1) +
+    scale_fill_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
     scale_y_continuous(limits = c(0, y_max), expand = expansion(mult = c(0, 0))) +
     labs(x = "Condition", y = y_label) +
     theme_minimal() +

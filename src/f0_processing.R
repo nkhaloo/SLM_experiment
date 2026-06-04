@@ -25,20 +25,42 @@ df <- raw |>
 df <- df |>
   mutate(across(all_of(f0_cols), ~ 12 * log2(.x)))
 
-# ── Speaker normalization (subtract each speaker's grand mean) ────────────────
-# Centers every speaker at 0 so male/female baseline differences are removed.
-# Values become semitone deviations from the speaker's own mean F0.
-speaker_means <- df |>
+# ── Gender-based min-max normalization ───────────────────────────────────────
+# Load gender from participant metadata; user number = row order in CSV.
+participant_meta <- read_csv(
+  "experiment_results/participants_results_filtered.csv",
+  show_col_types = FALSE
+) |>
+  mutate(
+    participant = paste0("user", row_number()),
+    gender = case_when(
+      str_to_lower(demo_gender) %in% c("female", "f", "woman") ~ "female",
+      str_to_lower(demo_gender) %in% c("male", "m", "man")     ~ "male",
+      TRUE ~ NA_character_
+    )
+  ) |>
+  select(participant, gender)
+
+# Gender-specific mean and SD across all F0 observations
+gender_stats <- df |>
+  left_join(participant_meta, by = "participant") |>
   pivot_longer(all_of(f0_cols), values_to = "f0_st") |>
-  group_by(participant) |>
-  summarise(speaker_mean = mean(f0_st, na.rm = TRUE), .groups = "drop")
+  group_by(gender) |>
+  summarise(
+    f0_mean = mean(f0_st, na.rm = TRUE),
+    f0_sd   = sd(f0_st,   na.rm = TRUE),
+    .groups = "drop"
+  )
 
-grand_mean_st <- mean(speaker_means$speaker_mean)  # for back-converting plots
+cat("Gender-specific F0 mean and SD (semitones):\n")
+print(gender_stats)
 
+# Z-score within gender: (x - gender_mean) / gender_sd
 df <- df |>
-  left_join(speaker_means, by = "participant") |>
-  mutate(across(all_of(f0_cols), ~ .x - speaker_mean)) |>
-  select(-speaker_mean)
+  left_join(participant_meta, by = "participant") |>
+  left_join(gender_stats, by = "gender") |>
+  mutate(across(all_of(f0_cols), ~ (.x - f0_mean) / f0_sd)) |>
+  select(-f0_mean, -f0_sd)
 
 # ── Drop rows with too few voiced intervals ───────────────────────────────────
 # Unvoiced edges produce NA; rows below this threshold are unrecoverable.
@@ -120,6 +142,15 @@ saveRDS(m1, "models/gam_f0.rds")
 conditions <- c("natural", "robotic")
 time_seq   <- seq(-7, 7, length.out = 200)
 
+excl <- c("s(participant)", "s(trial_fac)", "s(time,participant)")
+
+gam_predict <- function(nd) {
+  p <- predict(m1, newdata = nd, exclude = excl, type = "response", se.fit = TRUE)
+  nd$f0_pred <- p$fit
+  nd$se      <- p$se.fit
+  nd
+}
+
 # Predicted F0 contour per condition (excluding random effects)
 pred_time <- map_dfr(conditions, \(cond) {
   nd <- data.frame(
@@ -129,25 +160,21 @@ pred_time <- map_dfr(conditions, \(cond) {
     participant   = factor(levels(df_gam$participant)[1]),
     trial_fac     = factor(levels(df_gam$trial_fac)[1])
   )
-  nd$f0_pred <- predict(
-    m1, newdata = nd,
-    exclude = c("s(participant)", "s(trial_fac)", "s(time,participant)"),
-    type = "response"
-  )
-  nd$TTS_condition <- cond
-  nd
+  gam_predict(nd) |> mutate(TTS_condition = cond)
 })
 
 p_contour <- ggplot(
-  pred_time, aes(x = time, y = f0_pred, color = TTS_condition)
+  pred_time, aes(x = time, y = f0_pred, color = TTS_condition, fill = TTS_condition)
 ) +
+  geom_ribbon(aes(ymin = f0_pred - 1.96 * se, ymax = f0_pred + 1.96 * se),
+              alpha = 0.2, color = NA) +
   geom_line(linewidth = 1) +
   scale_color_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
+  scale_fill_manual(values  = c(natural = "#2196F3", robotic = "#F44336")) +
   labs(
-    x = "Time (intervals, 0 = midpoint)",
-    y = "F0 (semitones, speaker-normalized)",
-    color = "TTS condition",
-    title = "Predicted F0 contour by TTS condition"
+    x = "Normalized Time (centered)",
+    y = "F0 (semitones, Z-scored)",
+    color = "TTS condition", fill = "TTS condition"
   ) +
   theme_minimal()
 
@@ -162,28 +189,95 @@ pred_trial <- map_dfr(conditions, \(cond) {
     participant   = factor(levels(df_gam$participant)[1]),
     trial_fac     = factor(levels(df_gam$trial_fac)[1])
   )
-  nd$f0_pred <- predict(
-    m1, newdata = nd,
-    exclude = c("s(participant)", "s(trial_fac)", "s(time,participant)"),
-    type = "response"
-  )
-  nd$TTS_condition <- cond
-  nd
+  gam_predict(nd) |> mutate(TTS_condition = cond)
 })
 
 p_trial <- ggplot(
-  pred_trial, aes(x = trial, y = f0_pred, color = TTS_condition)
+  pred_trial, aes(x = trial, y = f0_pred, color = TTS_condition, fill = TTS_condition)
 ) +
+  geom_ribbon(aes(ymin = f0_pred - 1.96 * se, ymax = f0_pred + 1.96 * se),
+              alpha = 0.2, color = NA) +
   geom_line(linewidth = 1) +
   scale_color_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
+  scale_fill_manual(values  = c(natural = "#2196F3", robotic = "#F44336")) +
   labs(
-    x = "Trial number",
-    y = "F0 (semitones, speaker-normalized)",
-    color = "TTS condition",
-    title = "F0 trend over trials by TTS condition"
+    x = "Trial Number",
+    y = "F0 (semitones, Z-scored)",
+    color = "TTS condition", fill = "TTS condition"
   ) +
   theme_minimal()
 
 ggsave("figures/gam_f0_contour.png", p_contour, width = 7, height = 4, dpi = 150)
 ggsave("figures/gam_f0_trial_trend.png", p_trial,   width = 7, height = 4, dpi = 150)
+
+# ── Speaking rate & intensity ─────────────────────────────────────────────────
+library(lme4)
+library(lmerTest)
+
+acoustic_trials <- raw |>
+  filter(str_detect(Filename, "_trial_")) |>
+  mutate(
+    TTS_condition = factor(str_extract(Filename, "^[^_]+")),
+    participant   = str_extract(Filename, "user[0-9]+"),
+    trial         = as.integer(str_extract(Filename, "(?<=trial_)[0-9]+"))
+  ) |>
+  select(TTS_condition, participant, trial, speakingrate, Intensity)
+
+# Mahalanobis outlier filtering on (speakingrate, Intensity) jointly
+ac_complete   <- acoustic_trials[complete.cases(acoustic_trials[, c("speakingrate", "Intensity")]), ]
+ac_mat        <- as.matrix(ac_complete[, c("speakingrate", "Intensity")])
+ac_mahal      <- sqrt(mahalanobis(ac_mat, colMeans(ac_mat), cov(ac_mat)))
+acoustic_trials <- ac_complete[ac_mahal <= 6, ]
+
+cat(sprintf(
+  "Acoustic: %d trials in | %d incomplete | %d outliers (Mahal>6) | %d out\n",
+  nrow(ac_complete) + sum(!complete.cases(raw[str_detect(raw$Filename, "_trial_"), c("speakingrate", "Intensity")])),
+  sum(!complete.cases(acoustic_trials[, c("speakingrate", "Intensity")])),
+  sum(ac_mahal > 6),
+  nrow(acoustic_trials)
+))
+
+# sum code condition: intercept = grand mean, coefficient = robotic - natural
+contrasts(acoustic_trials$TTS_condition) <- c(-0.5, 0.5)
+
+# participant means for bar plots
+acoustic_means <- acoustic_trials |>
+  group_by(TTS_condition, participant) |>
+  summarise(
+    speakingrate = mean(speakingrate, na.rm = TRUE),
+    Intensity    = mean(Intensity,    na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# mixed models: condition × trial + random intercept for participant
+lmer_sr  <- lmer(
+  speakingrate ~ TTS_condition * trial + (1 | participant),
+  data = acoustic_trials, REML = TRUE
+)
+lmer_int <- lmer(
+  Intensity ~ TTS_condition * trial + (1 | participant),
+  data = acoustic_trials, REML = TRUE
+)
+cat("\n── Speaking rate ~ TTS condition * trial + (1|participant) ──\n")
+print(summary(lmer_sr))
+cat("\n── Intensity ~ TTS condition * trial + (1|participant) ──\n")
+print(summary(lmer_int))
+
+# smoothed line plots using loess directly on trial-level data
+plot_by_trial <- function(data, var, ylab) {
+  ggplot(data, aes(x = trial, y = .data[[var]],
+                   color = TTS_condition, fill = TTS_condition)) +
+    geom_smooth(method = "loess", span = 0.75, se = TRUE, alpha = 0.2) +
+    scale_color_manual(values = c(natural = "#2196F3", robotic = "#F44336")) +
+    scale_fill_manual(values  = c(natural = "#2196F3", robotic = "#F44336")) +
+    labs(x = "Trial number", y = ylab,
+         color = "TTS condition", fill = "TTS condition") +
+    theme_minimal()
+}
+
+p_sr  <- plot_by_trial(acoustic_trials, "speakingrate", "Speaking rate (syll/s)")
+p_int <- plot_by_trial(acoustic_trials, "Intensity", "Intensity (dB)")
+
+ggsave("figures/speakingrate_by_trial.png", p_sr,  width = 7, height = 4, dpi = 150)
+ggsave("figures/intensity_by_trial.png",    p_int, width = 7, height = 4, dpi = 150)
 
